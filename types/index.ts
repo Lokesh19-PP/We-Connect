@@ -83,6 +83,7 @@ export interface Drawing {
   approved: boolean;
   approvedBy?: string;
   approvedAt?: string; // ISO date
+  changeNote?: string;
   uploadedBy: string;
   uploadedAt: string; // ISO date
   fileUrl: string;

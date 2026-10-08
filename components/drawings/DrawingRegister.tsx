@@ -3,12 +3,12 @@
 import { useState } from 'react';
 import { Part, Drawing } from '@/types';
 import { getDrawingStatus } from '@/lib/drawing-utils';
-import { Search, FileText, Plus, Check } from 'lucide-react';
-import { useRole } from '@/lib/role-context';
-import { can } from '@/lib/permissions';
 import { UploadRevisionDialog } from './UploadRevisionDialog';
 import { addDrawing, approveDrawing, getJobsList, getAcknowledgements } from '@/data/drawings';
 import { AcknowledgementTracking } from './AcknowledgementTracking';
+import { RevisionHistoryPanel } from './RevisionHistoryPanel';
+import { DrawingViewer } from './DrawingViewer';
+import { AlertTriangle, History } from 'lucide-react';
 
 interface DrawingRegisterProps {
   parts: Part[];
@@ -21,6 +21,9 @@ export function DrawingRegister({ parts, initialDrawings }: { parts: Part[], ini
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   
+  const [historyPart, setHistoryPart] = useState<Part | null>(null);
+  const [viewerUrl, setViewerUrl] = useState<string | null>(null);
+
   const jobs = getJobsList();
   const acknowledgements = getAcknowledgements();
   
@@ -65,11 +68,32 @@ export function DrawingRegister({ parts, initialDrawings }: { parts: Part[], ini
         {filteredParts.map(part => {
            const partDrawings = drawings.filter(d => d.partId === part.id).sort((a, b) => b.uploadedAt.localeCompare(a.uploadedAt));
            
+           const approvedDrawing = partDrawings.find(d => d.approved);
+           const unackJobs = jobs.filter(j => 
+             j.partId === part.id && 
+             !['Delivered', 'Inspected', 'Paid'].includes(j.stage)
+           ).filter(job => {
+             const ack = acknowledgements.find(a => a.jobId === job.id && a.drawingId === approvedDrawing?.id);
+             return !ack?.acknowledgedAt;
+           });
+
            return (
              <div key={part.id} className="border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden">
                 <div className="px-5 py-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
                   <h2 className="font-semibold text-slate-900">{part.displayName} <span className="text-slate-500 font-normal text-sm ml-2">({part.type})</span></h2>
+                  <button 
+                    onClick={() => setHistoryPart(part)}
+                    className="inline-flex items-center text-sm font-medium text-slate-600 hover:text-slate-900 bg-white border border-slate-200 hover:bg-slate-50 px-3 py-1.5 rounded-md shadow-sm transition-colors"
+                  >
+                    <History className="w-4 h-4 mr-1.5" /> History
+                  </button>
                 </div>
+                {approvedDrawing && unackJobs.length > 0 && (
+                  <div className="px-5 py-3 bg-amber-50 border-b border-amber-100 flex items-center text-amber-800 text-sm font-medium">
+                    <AlertTriangle className="w-4 h-4 mr-2" />
+                    {approvedDrawing.revision} not acknowledged by: {unackJobs.map(j => j.workshopName).join(', ')}
+                  </div>
+                )}
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm text-left">
                     <thead className="text-slate-500 bg-white border-b border-slate-100">
@@ -120,9 +144,9 @@ export function DrawingRegister({ parts, initialDrawings }: { parts: Part[], ini
                                    <Check className="w-4 h-4 mr-1" /> Approve
                                  </button>
                                )}
-                               <a href={d.fileUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center text-blue-600 hover:text-blue-800 hover:underline">
+                               <button onClick={() => setViewerUrl(d.fileUrl)} className="inline-flex items-center text-blue-600 hover:text-blue-800 hover:underline">
                                  <FileText className="w-4 h-4 mr-1" /> View
-                               </a>
+                               </button>
                             </td>
                           </tr>
                         )
@@ -161,11 +185,21 @@ export function DrawingRegister({ parts, initialDrawings }: { parts: Part[], ini
              partId,
              revision,
              fileUrl,
+             changeNote,
              uploadedBy: `Current User (${role})`,
            });
            setDrawings(prev => [...prev, newDrawing]);
         }}
       />
+      
+      <RevisionHistoryPanel 
+        part={historyPart} 
+        drawings={historyPart ? drawings.filter(d => d.partId === historyPart.id) : []} 
+        onClose={() => setHistoryPart(null)} 
+      />
+      
+      <DrawingViewer url={viewerUrl} onClose={() => setViewerUrl(null)} />
+
       {toastMessage && (
         <div className="fixed bottom-4 right-4 bg-slate-900 text-white px-6 py-3 rounded-lg shadow-lg animate-in fade-in slide-in-from-bottom-5 z-50">
           {toastMessage}
