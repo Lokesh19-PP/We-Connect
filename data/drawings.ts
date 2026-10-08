@@ -27,6 +27,24 @@ export function getJobsList(): Job[] {
   return getJobs(); // from sample
 }
 
+export function getUnacknowledgedCount(): number {
+  const jobs = getJobsList();
+  const acks = getAcknowledgements();
+  const approvedDrawings = drawings.filter(d => d.approved);
+  
+  let count = 0;
+  for (const job of jobs) {
+    if (['Delivered', 'Inspected', 'Paid'].includes(job.stage)) continue;
+    
+    const approvedForPart = approvedDrawings.find(d => d.partId === job.partId);
+    if (!approvedForPart) continue;
+    
+    const ack = acks.find(a => a.jobId === job.id && a.drawingId === approvedForPart.id);
+    if (!ack?.acknowledgedAt) count++;
+  }
+  return count;
+}
+
 export function addDrawing(drawing: Omit<Drawing, 'id' | 'uploadedAt' | 'approved'>) {
   const newDrawing: Drawing = {
     ...drawing,
