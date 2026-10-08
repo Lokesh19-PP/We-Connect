@@ -8,7 +8,9 @@ import { addDrawing, approveDrawing, getJobsList, getAcknowledgements } from '@/
 import { AcknowledgementTracking } from './AcknowledgementTracking';
 import { RevisionHistoryPanel } from './RevisionHistoryPanel';
 import { DrawingViewer } from './DrawingViewer';
-import { AlertTriangle, History } from 'lucide-react';
+import { useRole } from '@/lib/role-context';
+import { can } from '@/lib/permissions';
+import { AlertTriangle, History, Search, Plus, Check, FileText } from 'lucide-react';
 
 interface DrawingRegisterProps {
   parts: Part[];
