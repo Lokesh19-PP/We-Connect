@@ -10,7 +10,7 @@ export default function DrawingsPage() {
       <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
         Drawings Register
       </h1>
-      <DrawingRegister parts={parts} drawings={drawings} />
+      <DrawingRegister parts={parts} initialDrawings={drawings} />
     </div>
   );
 }

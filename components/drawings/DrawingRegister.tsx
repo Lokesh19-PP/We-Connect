@@ -3,15 +3,24 @@
 import { useState } from 'react';
 import { Part, Drawing } from '@/types';
 import { getDrawingStatus } from '@/lib/drawing-utils';
-import { Search, FileText } from 'lucide-react';
+import { Search, FileText, Plus } from 'lucide-react';
+import { useRole } from '@/lib/role-context';
+import { can } from '@/lib/permissions';
+import { UploadRevisionDialog } from './UploadRevisionDialog';
+import { addDrawing } from '@/data/drawings';
 
 interface DrawingRegisterProps {
   parts: Part[];
   drawings: Drawing[];
 }
 
-export function DrawingRegister({ parts, drawings }: DrawingRegisterProps) {
+export function DrawingRegister({ parts, initialDrawings }: { parts: Part[], initialDrawings: Drawing[] }) {
   const [search, setSearch] = useState('');
+  const [drawings, setDrawings] = useState<Drawing[]>(initialDrawings);
+  const [isUploadOpen, setIsUploadOpen] = useState(false);
+  
+  const { role } = useRole();
+  const canUpload = can(role, 'drawing.approve') || role === 'Procurement';
 
   const filteredParts = parts.filter(p => 
     p.name.toLowerCase().includes(search.toLowerCase()) || 
@@ -31,7 +40,14 @@ export function DrawingRegister({ parts, drawings }: DrawingRegisterProps) {
              onChange={e => setSearch(e.target.value)}
            />
          </div>
-         {/* Button for Upload Revision will go here later */}
+         {canUpload && (
+           <button 
+             onClick={() => setIsUploadOpen(true)}
+             className="inline-flex items-center px-4 py-2 bg-orange-600 text-white text-sm font-medium rounded-md hover:bg-orange-700 transition-colors shadow-sm"
+           >
+             <Plus className="w-4 h-4 mr-1.5" /> Upload Revision
+           </button>
+         )}
       </div>
 
       <div className="space-y-6">
@@ -96,6 +112,21 @@ export function DrawingRegister({ parts, drawings }: DrawingRegisterProps) {
           </div>
         )}
       </div>
+
+      <UploadRevisionDialog 
+        parts={parts}
+        isOpen={isUploadOpen}
+        onClose={() => setIsUploadOpen(false)}
+        onUpload={(partId, revision, fileUrl, changeNote) => {
+           const newDrawing = addDrawing({
+             partId,
+             revision,
+             fileUrl,
+             uploadedBy: `Current User (${role})`,
+           });
+           setDrawings(prev => [...prev, newDrawing]);
+        }}
+      />
     </div>
   );
 }

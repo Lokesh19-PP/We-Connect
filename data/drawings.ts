@@ -21,3 +21,14 @@ export function getDrawingsForPart(partId: string): Drawing[] {
 export function getAcknowledgements(): DrawingAcknowledgement[] {
   return acknowledgements;
 }
+
+export function addDrawing(drawing: Omit<Drawing, 'id' | 'uploadedAt' | 'approved'>) {
+  const newDrawing: Drawing = {
+    ...drawing,
+    id: `d-${Date.now()}`,
+    uploadedAt: new Date().toISOString().split('T')[0],
+    approved: false, // starts as pending approval
+  };
+  drawings = [...drawings, newDrawing];
+  return newDrawing;
+}
