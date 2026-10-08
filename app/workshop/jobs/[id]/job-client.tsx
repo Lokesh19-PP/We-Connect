@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
-import { getJob, getDrawings, getAcknowledgementsForJob } from '@/data/sample';
+import { useState, useRef } from 'react';
+import { getJob, getDrawings, getAcknowledgementsForJob, getStatusUpdatesForJob } from '@/data/sample';
 import { canStartWork } from '@/lib/rules';
-import { CheckCircle2, FileText, ZoomIn, Lock } from 'lucide-react';
+import { CheckCircle2, FileText, ZoomIn, Lock, Camera, Image as ImageIcon, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,10 @@ import { Button } from '@/components/ui/button';
 export default function JobClient({ jobId }: { jobId: string }) {
   const job = getJob(jobId);
   const [localAckTime, setLocalAckTime] = useState<string | null>(null);
+  const [localUpdates, setLocalUpdates] = useState<any[]>([]);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [uploadFailed, setUploadFailed] = useState<boolean>(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!job) {
     return <div className="text-slate-400 p-6 text-center">Job not found.</div>;
@@ -18,14 +22,12 @@ export default function JobClient({ jobId }: { jobId: string }) {
 
   const allDrawings = getDrawings();
   const acks = getAcknowledgementsForJob(jobId);
+  const existingUpdates = getStatusUpdatesForJob(jobId);
   const approvedDrawing = allDrawings.find((d) => d.partId === job.partId && d.approved);
 
-  // Check initial ack state from sample data or local state
   const initialAck = acks.find((a) => a.drawingId === approvedDrawing?.id && a.acknowledgedAt !== null);
   const isAcknowledged = !!initialAck || !!localAckTime;
 
-  // Use rule 2
-  // We need to pass a mock of acks that includes our local ack if present
   const mockAcks = isAcknowledged 
     ? [...acks, { drawingId: approvedDrawing?.id, jobId, workshopId: job.workshopId, acknowledgedAt: localAckTime || initialAck?.acknowledgedAt }] as any
     : acks;
@@ -36,6 +38,44 @@ export default function JobClient({ jobId }: { jobId: string }) {
   const handleConfirmDrawing = () => {
     setLocalAckTime(new Date().toISOString());
   };
+
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setUploadFailed(false);
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        setPhotoPreview(ev.target?.result as string);
+        // Simulate a chance of failure for demo purposes
+        if (Math.random() < 0.3) {
+          setUploadFailed(true);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handlePostStatus = (status: string) => {
+    if (uploadFailed) return;
+    const newUpdate = {
+      id: `local-${Date.now()}`,
+      jobId,
+      status,
+      message: '',
+      photoUrl: photoPreview,
+      updatedAt: new Date().toISOString(),
+      updatedBy: 'Workshop Staff',
+    };
+    setLocalUpdates([newUpdate, ...localUpdates]);
+    setPhotoPreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const allUpdates = [...localUpdates, ...existingUpdates].sort(
+    (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+  );
 
   return (
     <div className="space-y-6 pb-20">
@@ -111,18 +151,93 @@ export default function JobClient({ jobId }: { jobId: string }) {
           </div>
         )}
 
-        <div className="grid grid-cols-1 gap-3">
-          <Button disabled={!canStart} variant="outline" className="min-h-[56px] text-base justify-start px-6 bg-slate-800 border-slate-700">
-            Started
-          </Button>
-          <Button disabled={!canStart} variant="outline" className="min-h-[56px] text-base justify-start px-6 bg-slate-800 border-slate-700">
-            In progress
-          </Button>
-          <Button disabled={!canStart} variant="outline" className="min-h-[56px] text-base justify-start px-6 bg-slate-800 border-slate-700">
-            Ready for dispatch
-          </Button>
+        <div className="bg-slate-800/50 p-4 rounded-2xl border border-slate-700/50 space-y-4">
+          <div className="flex items-center space-x-3">
+            <input 
+              type="file" 
+              accept="image/*" 
+              capture="environment" 
+              className="hidden" 
+              ref={fileInputRef}
+              onChange={handlePhotoUpload}
+              disabled={!canStart}
+            />
+            <Button 
+              variant="secondary" 
+              className="flex-1 min-h-[48px] bg-slate-700 hover:bg-slate-600"
+              disabled={!canStart}
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <Camera className="w-5 h-5 mr-2" />
+              Add photo
+            </Button>
+          </div>
+
+          {photoPreview && (
+            <div className="relative rounded-xl overflow-hidden border border-slate-700 bg-slate-900 h-32 flex items-center justify-center">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={photoPreview} alt="Preview" className="object-cover h-full w-full opacity-80" />
+              
+              {uploadFailed && (
+                <div className="absolute inset-0 bg-slate-900/80 flex flex-col items-center justify-center space-y-2">
+                  <AlertCircle className="w-8 h-8 text-red-500" />
+                  <span className="text-red-400 font-bold text-sm">Upload failed</span>
+                  <Button size="sm" variant="outline" className="bg-slate-800" onClick={() => setUploadFailed(false)}>
+                    Try again
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 gap-3 pt-2">
+            <Button disabled={!canStart || uploadFailed} onClick={() => handlePostStatus('Started')} variant="outline" className="min-h-[56px] text-base justify-start px-6 bg-slate-800 border-slate-700 text-white">
+              Started
+            </Button>
+            <Button disabled={!canStart || uploadFailed} onClick={() => handlePostStatus('In progress')} variant="outline" className="min-h-[56px] text-base justify-start px-6 bg-slate-800 border-slate-700 text-white">
+              In progress
+            </Button>
+            <Button disabled={!canStart || uploadFailed} onClick={() => handlePostStatus('Ready for dispatch')} variant="outline" className="min-h-[56px] text-base justify-start px-6 bg-slate-800 border-slate-700 text-white">
+              Ready for dispatch
+            </Button>
+          </div>
         </div>
       </section>
+
+      {allUpdates.length > 0 && (
+        <section className="space-y-3">
+          <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wider px-1">
+            Recent Updates
+          </h2>
+          <div className="space-y-3">
+            {allUpdates.map((update) => (
+              <div key={update.id} className="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-4 flex space-x-4">
+                <div className="shrink-0 mt-1">
+                  {update.photoUrl ? (
+                    <div className="w-12 h-12 bg-slate-700 rounded-lg overflow-hidden border border-slate-600">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={update.photoUrl} alt="Update" className="w-full h-full object-cover" />
+                    </div>
+                  ) : (
+                    <div className="w-12 h-12 bg-slate-700/50 rounded-lg flex items-center justify-center border border-slate-700">
+                      <ImageIcon className="w-5 h-5 text-slate-500" />
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-200">{update.status}</h3>
+                  <div className="flex items-center space-x-2 text-xs text-slate-400 mt-1">
+                    <span>{new Date(update.updatedAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</span>
+                    <span>•</span>
+                    <span>{update.updatedBy}</span>
+                  </div>
+                  {update.message && <p className="text-sm text-slate-300 mt-2">{update.message}</p>}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }
