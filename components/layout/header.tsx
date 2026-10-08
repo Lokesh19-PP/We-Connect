@@ -1,12 +1,13 @@
 'use client';
 
 // ──────────────────────────────────────────────
-// VendorFlow – Header / Top Bar
-// Search, Filters, NotificationBell, Role Switcher
+// We Connect – Header / Top Bar
+// Search, Filters, NotificationBell, DemoGuidePanel, Role Switcher
 // ──────────────────────────────────────────────
 import { useState } from 'react';
 import { useRole } from '@/lib/role-context';
 import { NotificationBell } from '@/components/notifications';
+import { DemoGuidePanel } from './demo-guide-panel';
 import { Search, UserCheck } from 'lucide-react';
 import type { Role } from '@/types';
 
@@ -24,7 +25,7 @@ export function Header() {
       {/* Search Input & Filters */}
       <div className="flex items-center space-x-3 flex-1 max-w-4xl">
         {/* Search Box */}
-        <div className="relative w-64">
+        <div className="relative w-60">
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
             type="text"
@@ -89,8 +90,11 @@ export function Header() {
         </div>
       </div>
 
-      {/* Right Controls: Notification Bell Component & Demo Role Switcher */}
-      <div className="flex items-center space-x-4">
+      {/* Right Controls: Demo Guide Panel, Notification Bell & Demo Role Switcher */}
+      <div className="flex items-center space-x-3">
+        {/* Interactive 7-Step Demo Guide */}
+        <DemoGuidePanel />
+
         {/* Exported Notification Bell Component */}
         <NotificationBell />
 
