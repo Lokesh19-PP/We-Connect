@@ -1,7 +1,7 @@
 'use client';
 
 // ──────────────────────────────────────────────
-// VendorFlow – Demo Role Switcher Context
+// We Connect – Demo Role Switcher Context
 // Lets the team view the app as any of the 10 roles.
 // Default role: Procurement (§4).
 // ──────────────────────────────────────────────
@@ -12,6 +12,7 @@ import {
   useCallback,
   type ReactNode,
 } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 import type { Role } from '@/types';
 
 /** All 10 roles in display order */
@@ -43,10 +44,21 @@ const RoleContext = createContext<RoleContextValue | undefined>(undefined);
 
 export function RoleProvider({ children }: { children: ReactNode }) {
   const [role, setRoleState] = useState<Role>('Procurement');
+  const router = useRouter();
+  const pathname = usePathname();
 
-  const setRole = useCallback((newRole: Role) => {
-    setRoleState(newRole);
-  }, []);
+  const setRole = useCallback(
+    (newRole: Role) => {
+      setRoleState(newRole);
+      const isNewWorkshop = newRole === 'Workshop Owner' || newRole === 'Workshop Staff';
+      if (isNewWorkshop && !pathname.startsWith('/workshop')) {
+        router.push('/workshop');
+      } else if (!isNewWorkshop && pathname.startsWith('/workshop')) {
+        router.push('/');
+      }
+    },
+    [router, pathname]
+  );
 
   const isWorkshopRole = role === 'Workshop Owner' || role === 'Workshop Staff';
 
