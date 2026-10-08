@@ -7,7 +7,8 @@ import { Search, FileText, Plus, Check } from 'lucide-react';
 import { useRole } from '@/lib/role-context';
 import { can } from '@/lib/permissions';
 import { UploadRevisionDialog } from './UploadRevisionDialog';
-import { addDrawing, approveDrawing } from '@/data/drawings';
+import { addDrawing, approveDrawing, getJobsList, getAcknowledgements } from '@/data/drawings';
+import { AcknowledgementTracking } from './AcknowledgementTracking';
 
 interface DrawingRegisterProps {
   parts: Part[];
@@ -19,6 +20,9 @@ export function DrawingRegister({ parts, initialDrawings }: { parts: Part[], ini
   const [drawings, setDrawings] = useState<Drawing[]>(initialDrawings);
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  
+  const jobs = getJobsList();
+  const acknowledgements = getAcknowledgements();
   
   const { role } = useRole();
   const canUpload = can(role, 'drawing.approve') || role === 'Procurement';
@@ -131,6 +135,13 @@ export function DrawingRegister({ parts, initialDrawings }: { parts: Part[], ini
                     </tbody>
                   </table>
                 </div>
+                {partDrawings.find(d => d.approved) && (
+                  <AcknowledgementTracking 
+                    approvedDrawing={partDrawings.find(d => d.approved)!}
+                    jobs={jobs}
+                    acknowledgements={acknowledgements}
+                  />
+                )}
              </div>
            );
         })}

@@ -23,6 +23,10 @@ export function getAcknowledgements(): DrawingAcknowledgement[] {
   return acknowledgements;
 }
 
+export function getJobsList(): Job[] {
+  return getJobs(); // from sample
+}
+
 export function addDrawing(drawing: Omit<Drawing, 'id' | 'uploadedAt' | 'approved'>) {
   const newDrawing: Drawing = {
     ...drawing,
