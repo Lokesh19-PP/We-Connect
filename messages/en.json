@@ -1,0 +1,83 @@
+{
+  "app": {
+    "name": "VendorFlow",
+    "workspace": "Deccan Boilers, Pune manufacturing unit",
+    "tagline": "Demo workspace"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "rfqs": "RFQs",
+    "jobs": "Jobs",
+    "vendors": "Vendors",
+    "quality": "Quality",
+    "deliveries": "Deliveries",
+    "payments": "Payments",
+    "reports": "Reports",
+    "settings": "Settings",
+    "drawings": "Drawings"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "subtitle": "Keep every part on track for assembly",
+    "addVendor": "Add Vendor",
+    "uploadRevision": "Upload Revision",
+    "newJob": "New Job",
+    "activeJobs": "Active Jobs",
+    "atRisk": "At Risk",
+    "overdue": "Overdue",
+    "awaitingAck": "Awaiting Drawing Acknowledgement",
+    "invoicesPending": "Invoices Pending",
+    "needsAction": "Needs Action Today",
+    "assemblyCalendar": "Assembly Calendar",
+    "jobsOverview": "Jobs Overview",
+    "vendorSnapshot": "Vendor Snapshot",
+    "qualitySnapshot": "Quality Snapshot",
+    "paymentSnapshot": "Payment Snapshot"
+  },
+  "stages": {
+    "ordered": "Ordered",
+    "accepted": "Accepted",
+    "inProgress": "In progress",
+    "ready": "Ready",
+    "delivered": "Delivered",
+    "inspected": "Inspected",
+    "paid": "Paid"
+  },
+  "risk": {
+    "onTrack": "On track",
+    "atRisk": "At risk",
+    "mayMissDate": "May miss date",
+    "reinspectionDue": "Reinspection due",
+    "overdue": "Overdue"
+  },
+  "payment": {
+    "notReady": "Not ready",
+    "ready": "Ready",
+    "onHoldForQuality": "On hold for quality",
+    "awaitingApproval": "Awaiting approval",
+    "paid": "Paid"
+  },
+  "workshopStatus": {
+    "started": "Started",
+    "inProgress": "In progress",
+    "readyForDispatch": "Ready for dispatch"
+  },
+  "actions": {
+    "remindVendor": "Remind vendor",
+    "reviewSchedule": "Review schedule",
+    "scheduleInspection": "Schedule inspection",
+    "review": "Review"
+  },
+  "tooltips": {
+    "overdue": "Overdue = past due date",
+    "atRisk": "At Risk = predicted to miss due date or assembly need"
+  },
+  "empty": {
+    "noJobs": "No jobs found",
+    "noData": "No data available"
+  },
+  "loading": {
+    "default": "Loading..."
+  },
+  "comingSoon": "Coming soon"
+}
