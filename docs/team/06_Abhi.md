@@ -11,9 +11,19 @@
 Follow AGENTS.md. I am Abhi. Build /deliveries: a list of deliveries (job, part, vendor, quantity, delivery date, challan) and a "Record delivery" dialog for the Stores role (date, quantity, challan or delivery note upload, dispatch details such as vehicle number and transporter name). Show expected vs received quantity and flag shortages in amber. Use can(role, "delivery.record").
 ```
 
+**Git Commit:**
+```bash
+git add . && git commit -m "feat(deliveries): build deliveries list and Goods Receipt Note (GRN) recording dialog"
+```
+
 ## Prompt 2: Payments board
 ```
 Follow AGENTS.md. Build /payments with summary cards: Received, On hold for quality, Awaiting approval, Average days to pay (sample numbers should match AGENTS.md: 12, 2, 4, 18). Below, a table of jobs: job, vendor, invoice amount, delivery (yes/no), inspection result, invoice (yes/no), payment status badge. Tabs: All, Ready, On hold for quality, Awaiting approval, Paid.
+```
+
+**Git Commit:**
+```bash
+git add . && git commit -m "feat(payments): build payments board with financial summary cards and tabbed invoice table"
 ```
 
 ## Prompt 3: Readiness checklist per job
@@ -21,14 +31,29 @@ Follow AGENTS.md. Build /payments with summary cards: Received, On hold for qual
 Follow AGENTS.md. Opening a payment row shows a 3-item checklist: Delivery recorded, Inspection accepted, Invoice uploaded, each with a green tick or a red cross and a link to fix it (/deliveries, /quality, workshop invoice). If any item fails, show the reason in plain words, for example "On hold for quality: inspection rejected on 6 Oct". Status comes only from getPaymentStatus().
 ```
 
+**Git Commit:**
+```bash
+git add . && git commit -m "feat(payments): add 3-item payment readiness checklist driven by business rules"
+```
+
 ## Prompt 4: Invoice review and finance approval
 ```
 Follow AGENTS.md. For Finance (can(role, "payment.approve")): "Review invoice" dialog with invoice preview, amount, and Approve / Send back with reason. After approval and when Ready, show "Mark as paid" (payment date and reference). Update status to Paid in local state through data/payments.ts. Other roles see the buttons disabled with a tooltip.
 ```
 
+**Git Commit:**
+```bash
+git add . && git commit -m "feat(payments): implement finance invoice review, approval flow, and payment marking"
+```
+
 ## Prompt 5: Pending invoices and polish
 ```
 Follow AGENTS.md. Add a "6 Invoices Pending" view (filter) that matches the Dashboard count by using the same sample data, and show days since delivery in red after 30 days. Add empty/loading states and a responsive layout.
+```
+
+**Git Commit:**
+```bash
+git add . && git commit -m "style(payments): add 30-day overdue invoice filters and synchronize dashboard counts"
 ```
 
 ## Done checklist

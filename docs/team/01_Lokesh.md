@@ -22,12 +22,22 @@ Create folders: app, components, data, lib, types, messages.
 Do not build any screens yet.
 ```
 
+**Git Commit:**
+```bash
+git add . && git commit -m "feat(setup): scaffold project, shared types, rules, and permissions"
+```
+
 ## Prompt 1: App shell with role-aware sidebar
 ```
 Follow AGENTS.md. Build the app shell in components/layout: dark navy sidebar (Dashboard, RFQs, Jobs with badge, Vendors, Quality, Deliveries, Payments, Reports, Settings), footer "Deccan Boilers, Pune manufacturing unit / Demo workspace", top bar with search, filters (Project / Boiler, All vendors, Date range, Part type), notification bell and a demo role switcher dropdown from useRole().
 Sidebar links go to: /, /rfqs, /jobs, /vendors, /quality, /deliveries, /payments, /reports, /settings. Also add a "Drawings" link to /drawings.
 Hide sidebar items the current role cannot see (use can() from lib/permissions). For Workshop Owner and Workshop Staff roles, redirect to /workshop and show a simple phone-style layout instead of the sidebar.
 Create placeholder pages (title only) for every route so links never 404.
+```
+
+**Git Commit:**
+```bash
+git add . && git commit -m "feat(shell): implement responsive app shell, sidebar navigation, and role switcher"
 ```
 
 ## Prompt 2: Push and announce (manual, not an AI prompt)
@@ -47,9 +57,19 @@ Follow AGENTS.md. Build the Dashboard page at app/page.tsx to match the attached
 Components go in components/dashboard. Add loading and empty states.
 ```
 
+**Git Commit:**
+```bash
+git add . && git commit -m "feat(dashboard): build executive dashboard with summary cards, assembly calendar, and job overview"
+```
+
 ## Prompt 4: Dashboard interactivity
 ```
 Follow AGENTS.md. Make the dashboard filters work on the cards and tables. Make "Remind vendor" open a confirmation dialog, then show a toast "Reminder sent to Workshop C". Add the term definitions as tooltips: Overdue = past due date; At Risk = predicted to miss due date or assembly need.
+```
+
+**Git Commit:**
+```bash
+git add . && git commit -m "feat(dashboard): add interactive filters, vendor reminder dialogs, and tooltips"
 ```
 
 ## Prompt 5: Integration (after others open pull requests)
@@ -57,9 +77,19 @@ Follow AGENTS.md. Make the dashboard filters work on the cards and tables. Make 
 Follow AGENTS.md. Check that every sidebar link, dashboard button and "Needs Action Today" action opens the right page built by the team. List any broken links or inconsistent vocabulary and fix only the shared files I own.
 ```
 
+**Git Commit:**
+```bash
+git add . && git commit -m "fix(integration): verify cross-page navigation links and unify vocabulary across screens"
+```
+
 ## Prompt 6: Final polish
 ```
 Follow AGENTS.md. Review the whole app: empty and loading states, responsive layout, consistent badge colours, and the demo flow in docs/team/00_TEAM_PLAN.md. List bugs found; fix only what is in my files.
+```
+
+**Git Commit:**
+```bash
+git add . && git commit -m "style(polish): refine dashboard states, badges, responsiveness, and end-to-end demo flow"
 ```
 
 ## Your checklist

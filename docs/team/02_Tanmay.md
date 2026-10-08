@@ -15,9 +15,19 @@ Follow AGENTS.md. I am Tanmay. Build /jobs (app/jobs/page.tsx, components in com
 - Loading and empty states.
 ```
 
+**Git Commit:**
+```bash
+git add . && git commit -m "feat(jobs): build jobs list table with search, filters, pagination, and status badges"
+```
+
 ## Prompt 2: New Job dialog
 ```
 Follow AGENTS.md. Build the New Job dialog: part (select), quantity, workshop (select), material, due date, needed-by assembly date. Validate required fields. Only roles allowed by can(role, "job.create") see the button. On submit, add the job to local state (and data/jobs.ts helper) with stage "Ordered", attach the currently approved drawing revision for the part, and show a toast.
+```
+
+**Git Commit:**
+```bash
+git add . && git commit -m "feat(jobs): add New Job creation dialog with validation and drawing revision association"
 ```
 
 ## Prompt 3: Job detail page
@@ -25,14 +35,29 @@ Follow AGENTS.md. Build the New Job dialog: part (select), quantity, workshop (s
 Follow AGENTS.md. Build /jobs/[id]: header with part, vendor, stage badge, risk badge; quantity ordered vs accepted; due date and needed-by date; current approved drawing revision and acknowledgement status (acknowledged / not acknowledged with date); latest status updates; delivery, inspection and payment status summary using getPaymentStatus() from @/lib/rules. Add a "Remind vendor" button if the drawing is not acknowledged. Handle "job not found".
 ```
 
+**Git Commit:**
+```bash
+git add . && git commit -m "feat(jobs): implement job detail view with drawing ack status, payment summary, and vendor reminders"
+```
+
 ## Prompt 4: Per-part timeline
 ```
 Follow AGENTS.md. On the job detail page add a vertical timeline for the 7 stages: Ordered, Accepted, In progress, Ready, Delivered, Inspected, Paid. Show done / current / upcoming, with dates and who did it. Below it add a full history list (audit trail): status change, acknowledgement, inspection, payment action, each with user and time.
 ```
 
+**Git Commit:**
+```bash
+git add . && git commit -m "feat(jobs): add vertical stage timeline and detailed audit history log to job detail view"
+```
+
 ## Prompt 5: Rule demo and polish
 ```
 Follow AGENTS.md. On the job detail page, add a "Move to In progress" button for demo that is disabled with a clear message when the drawing is not acknowledged (use canStartWork() from @/lib/rules). Polish spacing, make the page responsive, and check all links back to /jobs.
+```
+
+**Git Commit:**
+```bash
+git add . && git commit -m "feat(jobs): enforce canStartWork rule on stage transition and polish job management UI"
 ```
 
 ## Done checklist
