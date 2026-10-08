@@ -1,10 +1,9 @@
 'use client';
 
 // ──────────────────────────────────────────────
-// VendorFlow – Executive Subcontracting Dashboard
+// We Connect – Executive Subcontracting Dashboard
 // Route: / (app/page.tsx)
 // Interactive filters, vendor reminder dialog, tooltips
-// Owned by Lokesh (Team Lead) (§8 & Prompt 4)
 // ──────────────────────────────────────────────
 import { useState } from 'react';
 import Link from 'next/link';
@@ -15,6 +14,8 @@ import {
   JobsOverviewTable,
   SnapshotsSection,
 } from '@/components/dashboard';
+import { PageHeader } from '@/components/ui/page-header';
+import { Button } from '@/components/ui/button';
 import { LayoutDashboard, Plus, Upload, Building2, Filter } from 'lucide-react';
 
 export default function DashboardPage() {
@@ -23,52 +24,43 @@ export default function DashboardPage() {
   const [selectedProject, setSelectedProject] = useState('All Projects');
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-8">
+    <div className="space-y-6 max-w-7xl mx-auto pb-8 animate-in fade-in duration-300">
       {/* Dashboard Top Header & Actions */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight flex items-center space-x-2">
-            <LayoutDashboard className="w-7 h-7 text-blue-600 shrink-0" />
-            <span>Dashboard</span>
-          </h1>
-          <p className="text-xs text-slate-500 mt-1">
-            Keep every part on track for assembly — Deccan Boilers Pune Unit
-          </p>
-        </div>
+      <PageHeader
+        title="Dashboard"
+        subtitle="Keep every part on track for assembly — Deccan Boilers Pune Unit"
+        icon={LayoutDashboard}
+        actions={
+          <div className="flex items-center space-x-3">
+            <Link href="/vendors">
+              <Button variant="outline" size="sm">
+                <Building2 className="w-3.5 h-3.5" />
+                Add Vendor
+              </Button>
+            </Link>
 
-        {/* Header Action Buttons */}
-        <div className="flex items-center space-x-3">
-          <Link
-            href="/vendors"
-            className="flex items-center space-x-1.5 px-3 py-2 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 font-bold text-xs rounded-xl shadow-2xs transition-colors"
-          >
-            <Building2 className="w-3.5 h-3.5" />
-            <span>Add Vendor</span>
-          </Link>
+            <Link href="/drawings">
+              <Button variant="outline" size="sm">
+                <Upload className="w-3.5 h-3.5" />
+                Upload Revision
+              </Button>
+            </Link>
 
-          <Link
-            href="/drawings"
-            className="flex items-center space-x-1.5 px-3 py-2 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 font-bold text-xs rounded-xl shadow-2xs transition-colors"
-          >
-            <Upload className="w-3.5 h-3.5" />
-            <span>Upload Revision</span>
-          </Link>
-
-          <Link
-            href="/jobs?new=1"
-            className="flex items-center space-x-1.5 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs rounded-xl shadow-sm transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            <span>New Job</span>
-          </Link>
-        </div>
-      </div>
+            <Link href="/jobs?new=1">
+              <Button variant="default" size="sm">
+                <Plus className="w-4 h-4" />
+                New Job
+              </Button>
+            </Link>
+          </div>
+        }
+      />
 
       {/* Interactive Dashboard Local Filter Toolbar */}
-      <div className="p-3.5 bg-white border border-slate-200 rounded-xl shadow-2xs flex items-center justify-between">
+      <div className="p-3.5 bg-white border border-[#E5E7EB] rounded-[10px] shadow-xs flex items-center justify-between">
         <div className="flex items-center space-x-3 text-xs">
-          <div className="flex items-center space-x-1.5 text-slate-500 font-bold">
-            <Filter className="w-4 h-4 text-blue-600" />
+          <div className="flex items-center space-x-1.5 text-gray-500 font-semibold">
+            <Filter className="w-4 h-4 text-[#F97316]" />
             <span>Dashboard Filters:</span>
           </div>
 
@@ -76,7 +68,7 @@ export default function DashboardPage() {
           <select
             value={selectedVendor}
             onChange={(e) => setSelectedVendor(e.target.value)}
-            className="bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1.5 font-medium text-slate-700 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+            className="bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1.5 font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#F97316]"
           >
             <option value="All Vendors">All Vendors</option>
             <option value="Shree Fabricators">Shree Fabricators</option>
@@ -90,7 +82,7 @@ export default function DashboardPage() {
           <select
             value={selectedPartType}
             onChange={(e) => setSelectedPartType(e.target.value)}
-            className="bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1.5 font-medium text-slate-700 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+            className="bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1.5 font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#F97316]"
           >
             <option value="All Part Types">Part Type: All</option>
             <option value="Bracket">Bracket</option>
@@ -104,7 +96,7 @@ export default function DashboardPage() {
           <select
             value={selectedProject}
             onChange={(e) => setSelectedProject(e.target.value)}
-            className="bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1.5 font-medium text-slate-700 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+            className="bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1.5 font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#F97316]"
           >
             <option value="All Projects">Project: All</option>
             <option value="Boiler B-200">Boiler B-200</option>
@@ -120,7 +112,7 @@ export default function DashboardPage() {
               setSelectedPartType('All Part Types');
               setSelectedProject('All Projects');
             }}
-            className="text-[11px] font-bold text-blue-600 hover:text-blue-800"
+            className="text-[12px] font-semibold text-[#F97316] hover:underline"
           >
             Reset Filters
           </button>

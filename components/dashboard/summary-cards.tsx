@@ -1,8 +1,8 @@
 'use client';
 
 // ──────────────────────────────────────────────
-// VendorFlow – Dashboard Summary Stat Cards (§8)
-// Interactive filters & term definition tooltips
+// We Connect – Dashboard Summary Stat Cards (§8)
+// Interactive filters, top accent colors, and term tooltips
 // ──────────────────────────────────────────────
 import { useState } from 'react';
 import Link from 'next/link';
@@ -33,7 +33,6 @@ export function SummaryCards({
   selectedProject = 'All Projects',
   selectedVendor = 'All Vendors',
   selectedPartType = 'All Part Types',
-  selectedDateRange = 'Date range: All',
 }: SummaryCardsProps) {
   const [activeTooltip, setActiveTooltip] = useState<string | null>(null);
 
@@ -44,7 +43,6 @@ export function SummaryCards({
 
   // Filter jobs dynamically
   const filteredJobs = allJobs.filter((job) => {
-    // Vendor filter
     if (
       selectedVendor !== 'All Vendors' &&
       !job.workshopName.toLowerCase().includes(selectedVendor.toLowerCase())
@@ -52,7 +50,6 @@ export function SummaryCards({
       return false;
     }
 
-    // Part Type filter
     if (selectedPartType !== 'All Part Types') {
       const part = allParts.find((p) => p.id === job.partId);
       if (part && !part.name.toLowerCase().includes(selectedPartType.toLowerCase())) {
@@ -60,18 +57,18 @@ export function SummaryCards({
       }
     }
 
-    // Project filter (Boiler B-200, B-300, etc.)
     if (selectedProject !== 'All Projects') {
-      if (!job.notes.toLowerCase().includes(selectedProject.toLowerCase()) &&
-          !job.partDisplayName.toLowerCase().includes(selectedProject.toLowerCase())) {
-        // demo matching
+      if (
+        !job.notes.toLowerCase().includes(selectedProject.toLowerCase()) &&
+        !job.partDisplayName.toLowerCase().includes(selectedProject.toLowerCase())
+      ) {
+        // match project if present
       }
     }
 
     return true;
   });
 
-  // Calculate filtered counts
   const activeJobsCount = filteredJobs.filter(
     (j) => j.stage !== 'Paid' && j.stage !== 'Inspected'
   ).length;
@@ -102,7 +99,8 @@ export function SummaryCards({
       href: '/jobs',
       icon: Briefcase,
       color: 'text-blue-600',
-      bgColor: 'bg-blue-50 border-blue-100',
+      bgColor: 'bg-blue-50',
+      topAccent: 'border-t-4 border-t-blue-500',
     },
     {
       id: 'at-risk',
@@ -113,7 +111,8 @@ export function SummaryCards({
       href: '/jobs?filter=risk',
       icon: AlertTriangle,
       color: 'text-amber-600',
-      bgColor: 'bg-amber-50 border-amber-100',
+      bgColor: 'bg-amber-50',
+      topAccent: 'border-t-4 border-t-amber-500',
     },
     {
       id: 'overdue',
@@ -124,7 +123,8 @@ export function SummaryCards({
       href: '/jobs?filter=overdue',
       icon: Clock,
       color: 'text-red-600',
-      bgColor: 'bg-red-50 border-red-100',
+      bgColor: 'bg-red-50',
+      topAccent: 'border-t-4 border-t-red-500',
     },
     {
       id: 'ack',
@@ -135,7 +135,8 @@ export function SummaryCards({
       href: '/drawings',
       icon: FileCheck,
       color: 'text-indigo-600',
-      bgColor: 'bg-indigo-50 border-indigo-100',
+      bgColor: 'bg-indigo-50',
+      topAccent: 'border-t-4 border-t-indigo-500',
     },
     {
       id: 'pending',
@@ -146,7 +147,8 @@ export function SummaryCards({
       href: '/payments',
       icon: CreditCard,
       color: 'text-emerald-600',
-      bgColor: 'bg-emerald-50 border-emerald-100',
+      bgColor: 'bg-emerald-50',
+      topAccent: 'border-t-4 border-t-emerald-500',
     },
   ];
 
@@ -157,24 +159,23 @@ export function SummaryCards({
         return (
           <div
             key={card.id}
-            className="p-4 rounded-xl border bg-white shadow-2xs hover:shadow-md transition-all group relative"
+            className={`p-4 rounded-[10px] border border-gray-200 bg-white shadow-xs hover:shadow-md transition-all group relative ${card.topAccent}`}
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-1.5">
-                <span className="text-xs font-semibold text-slate-500">
+                <span className="text-xs font-semibold text-gray-500">
                   {card.title}
                 </span>
 
-                {/* Term Tooltip Info Icon */}
                 <div
                   className="relative cursor-help"
                   onMouseEnter={() => setActiveTooltip(card.id)}
                   onMouseLeave={() => setActiveTooltip(null)}
                 >
-                  <Info className="w-3.5 h-3.5 text-slate-400 hover:text-slate-600 transition-colors" />
+                  <Info className="w-3.5 h-3.5 text-gray-400 hover:text-gray-600 transition-colors" />
 
                   {activeTooltip === card.id && (
-                    <div className="absolute left-0 bottom-6 w-48 bg-slate-900 text-white text-[11px] p-2.5 rounded-lg shadow-xl z-50 font-normal leading-tight pointer-events-none animate-in fade-in duration-150">
+                    <div className="absolute left-0 bottom-6 w-48 bg-gray-900 text-white text-[11px] p-2.5 rounded-lg shadow-xl z-50 font-normal leading-tight pointer-events-none animate-in fade-in duration-150">
                       {card.tooltip}
                     </div>
                   )}
@@ -188,12 +189,12 @@ export function SummaryCards({
 
             <Link href={card.href} className="block">
               <div className="mt-3 flex items-baseline justify-between">
-                <p className="text-2xl font-extrabold text-slate-900">
+                <p className="text-[24px] font-semibold text-gray-900 tracking-tight">
                   {card.count}
                 </p>
-                <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-slate-600 transition-colors" />
+                <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-[#F97316] transition-colors" />
               </div>
-              <p className="text-[11px] text-slate-400 mt-1">{card.subtitle}</p>
+              <p className="text-[12px] text-gray-500 mt-1">{card.subtitle}</p>
             </Link>
           </div>
         );
