@@ -1,12 +1,16 @@
+import { getParts, getDrawings } from '@/data/drawings';
+import { DrawingRegister } from '@/components/drawings/DrawingRegister';
+
 export default function DrawingsPage() {
+  const parts = getParts();
+  const drawings = getDrawings();
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
         Drawings Register
       </h1>
-      <div className="p-8 bg-white border border-slate-200 rounded-xl shadow-2xs text-center text-slate-500 text-sm">
-        Drawing revisions and acknowledgement register. Owned by Suyash (feat/suyash-drawings).
-      </div>
+      <DrawingRegister parts={parts} drawings={drawings} />
     </div>
   );
 }
