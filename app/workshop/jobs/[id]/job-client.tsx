@@ -1,12 +1,13 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { getJob, getDrawings, getAcknowledgementsForJob, getStatusUpdatesForJob } from '@/data/sample';
+import { getJob, getDrawings, getAcknowledgementsForJob, getStatusUpdatesForJob, getDeliveriesForJob, getInspectionsForJob, getInvoicePaymentsForJob } from '@/data/sample';
 import { canStartWork } from '@/lib/rules';
-import { CheckCircle2, FileText, ZoomIn, Lock, Camera, Image as ImageIcon, AlertCircle } from 'lucide-react';
+import { CheckCircle2, FileText, ZoomIn, Lock, Camera, Image as ImageIcon, AlertCircle, Receipt, Upload, FileUp } from 'lucide-react';
 import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { getPaymentStatus } from '@/lib/rules';
 
 export default function JobClient({ jobId }: { jobId: string }) {
   const job = getJob(jobId);
@@ -15,6 +16,9 @@ export default function JobClient({ jobId }: { jobId: string }) {
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [uploadFailed, setUploadFailed] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const invoiceInputRef = useRef<HTMLInputElement>(null);
+  const [invoiceAmount, setInvoiceAmount] = useState<string>('');
+  const [localInvoice, setLocalInvoice] = useState<{ amount: number, file: string } | null>(null);
 
   if (!job) {
     return <div className="text-slate-400 p-6 text-center">Job not found.</div>;
@@ -24,8 +28,15 @@ export default function JobClient({ jobId }: { jobId: string }) {
   const acks = getAcknowledgementsForJob(jobId);
   const existingUpdates = getStatusUpdatesForJob(jobId);
   const approvedDrawing = allDrawings.find((d) => d.partId === job.partId && d.approved);
+  const deliveries = getDeliveriesForJob(jobId);
+  const inspections = getInspectionsForJob(jobId);
+  const invoices = getInvoicePaymentsForJob(jobId);
 
-  const initialAck = acks.find((a) => a.drawingId === approvedDrawing?.id && a.acknowledgedAt !== null);
+  const activeInvoice = localInvoice ? { invoiceNumber: 'LOCAL-123', amount: localInvoice.amount, paymentStatus: 'Awaiting approval' as any } : invoices[0];
+  const paymentStatus = getPaymentStatus(deliveries, inspections, activeInvoice);
+  
+  // Is delivered?
+  const isDelivered = deliveries.length > 0 || localUpdates.some(u => u.status === 'Delivered');
   const isAcknowledged = !!initialAck || !!localAckTime;
 
   const mockAcks = isAcknowledged 
@@ -70,6 +81,16 @@ export default function JobClient({ jobId }: { jobId: string }) {
     setPhotoPreview(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
+    }
+  };
+
+  const handleInvoiceUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && invoiceAmount) {
+      setLocalInvoice({
+        amount: Number(invoiceAmount),
+        file: file.name
+      });
     }
   };
 
@@ -235,6 +256,70 @@ export default function JobClient({ jobId }: { jobId: string }) {
                 </div>
               </div>
             ))}
+          </div>
+        </section>
+      )}
+
+      {isDelivered && (
+        <section className="space-y-3 pb-8">
+          <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wider px-1">
+            Payment Status
+          </h2>
+          <div className="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-4 space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <Receipt className="w-6 h-6 text-slate-400" />
+                <span className="font-semibold text-slate-200">Current Status</span>
+              </div>
+              <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                paymentStatus === 'Paid' ? 'bg-emerald-500/20 text-emerald-400' :
+                paymentStatus === 'Ready' ? 'bg-blue-500/20 text-blue-400' :
+                paymentStatus === 'On hold for quality' ? 'bg-red-500/20 text-red-400' :
+                paymentStatus === 'Awaiting approval' ? 'bg-amber-500/20 text-amber-400' :
+                'bg-slate-700 text-slate-300'
+              }`}>
+                {paymentStatus}
+              </span>
+            </div>
+
+            {paymentStatus === 'On hold for quality' && (
+              <div className="text-sm text-red-400/90 bg-red-500/10 p-3 rounded-xl">
+                Reason: Inspection failed or is pending review.
+              </div>
+            )}
+
+            {!activeInvoice && (
+              <div className="pt-3 border-t border-slate-700/50 space-y-3">
+                <p className="text-sm text-slate-300">Upload your invoice to get paid.</p>
+                <div className="flex items-center space-x-3">
+                  <div className="relative flex-1">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">₹</span>
+                    <input
+                      type="number"
+                      value={invoiceAmount}
+                      onChange={(e) => setInvoiceAmount(e.target.value)}
+                      placeholder="Amount"
+                      className="w-full bg-slate-900 border border-slate-700 rounded-xl py-3 pl-8 pr-4 text-white focus:outline-hidden focus:border-blue-500"
+                    />
+                  </div>
+                  <input
+                    type="file"
+                    accept=".pdf,image/*"
+                    className="hidden"
+                    ref={invoiceInputRef}
+                    onChange={handleInvoiceUpload}
+                  />
+                  <Button
+                    onClick={() => invoiceInputRef.current?.click()}
+                    disabled={!invoiceAmount}
+                    className="min-h-[48px] bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl"
+                  >
+                    <Upload className="w-5 h-5 mr-2" />
+                    Upload
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         </section>
       )}
