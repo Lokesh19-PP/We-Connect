@@ -18,8 +18,8 @@ function MainAppLayout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="flex min-h-screen bg-slate-50 text-slate-900 font-sans">
-      {/* Dark Navy Sidebar */}
+    <div className="flex min-h-screen bg-[#F6F7F9] text-gray-900 font-sans antialiased">
+      {/* Dark Navy Sidebar (#0F1B33) */}
       <Sidebar />
 
       {/* Main Content Area */}
@@ -36,9 +36,8 @@ function MainAppLayout({ children }: { children: React.ReactNode }) {
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-slate-900" />}>
+    <Suspense fallback={<div className="min-h-screen bg-[#0F1B33]" />}>
       <MainAppLayout>{children}</MainAppLayout>
     </Suspense>
   );
 }
-

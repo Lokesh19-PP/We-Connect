@@ -563,12 +563,12 @@ function StatusBadge({ status }: { status: PaymentStatus }) {
 
 function InspectionDot({ result }: { result: string | null }) {
   if (!result || result === 'Pending') {
-    return <Clock className="w-4 h-4 text-amber-400 mx-auto" title="Pending" />;
+    return <span title="Pending"><Clock className="w-4 h-4 text-amber-400 mx-auto" /></span>;
   }
   if (result === 'Accepted') {
-    return <CheckCircle2 className="w-4 h-4 text-green-500 mx-auto" title="Accepted" />;
+    return <span title="Accepted"><CheckCircle2 className="w-4 h-4 text-green-500 mx-auto" /></span>;
   }
-  return <XCircle className="w-4 h-4 text-red-400 mx-auto" title="Rejected" />;
+  return <span title="Rejected"><XCircle className="w-4 h-4 text-red-400 mx-auto" /></span>;
 }
 
 function EmptyState({ tab, search }: { tab: Tab; search: string }) {
