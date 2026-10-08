@@ -3,11 +3,11 @@
 import { useState } from 'react';
 import { Part, Drawing } from '@/types';
 import { getDrawingStatus } from '@/lib/drawing-utils';
-import { Search, FileText, Plus } from 'lucide-react';
+import { Search, FileText, Plus, Check } from 'lucide-react';
 import { useRole } from '@/lib/role-context';
 import { can } from '@/lib/permissions';
 import { UploadRevisionDialog } from './UploadRevisionDialog';
-import { addDrawing } from '@/data/drawings';
+import { addDrawing, approveDrawing } from '@/data/drawings';
 
 interface DrawingRegisterProps {
   parts: Part[];
@@ -18,9 +18,16 @@ export function DrawingRegister({ parts, initialDrawings }: { parts: Part[], ini
   const [search, setSearch] = useState('');
   const [drawings, setDrawings] = useState<Drawing[]>(initialDrawings);
   const [isUploadOpen, setIsUploadOpen] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
   
   const { role } = useRole();
   const canUpload = can(role, 'drawing.approve') || role === 'Procurement';
+  const canApprove = can(role, 'drawing.approve');
+
+  const showToast = (message: string) => {
+    setToastMessage(message);
+    setTimeout(() => setToastMessage(null), 3000);
+  };
 
   const filteredParts = parts.filter(p => 
     p.name.toLowerCase().includes(search.toLowerCase()) || 
@@ -67,7 +74,7 @@ export function DrawingRegister({ parts, initialDrawings }: { parts: Part[], ini
                         <th className="px-5 py-3 font-medium">Status</th>
                         <th className="px-5 py-3 font-medium">Date</th>
                         <th className="px-5 py-3 font-medium">Uploaded By</th>
-                        <th className="px-5 py-3 font-medium text-right">File</th>
+                        <th className="px-5 py-3 font-medium text-right">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
@@ -85,9 +92,30 @@ export function DrawingRegister({ parts, initialDrawings }: { parts: Part[], ini
                                 {status}
                               </span>
                             </td>
-                            <td className="px-5 py-3 text-slate-600">{d.uploadedAt}</td>
+                            <td className="px-5 py-3 text-slate-600">
+                              <div>{d.uploadedAt}</div>
+                              {d.approved && d.approvedBy && (
+                                <div className="text-xs text-green-600 mt-1">Approved by {d.approvedBy} on {d.approvedAt}</div>
+                              )}
+                            </td>
                             <td className="px-5 py-3 text-slate-600">{d.uploadedBy}</td>
-                            <td className="px-5 py-3 text-right">
+                            <td className="px-5 py-3 text-right space-x-3">
+                               {!d.approved && canApprove && (
+                                 <button 
+                                   onClick={() => {
+                                     const result = approveDrawing(d.id, `Current User (${role})`);
+                                     if (result.success) {
+                                       setDrawings(result.updatedDrawings);
+                                       showToast(`${result.notifiedCount} workshop(s) notified`);
+                                     } else {
+                                       alert(result.error);
+                                     }
+                                   }}
+                                   className="inline-flex items-center text-green-600 hover:text-green-800 text-sm font-medium"
+                                 >
+                                   <Check className="w-4 h-4 mr-1" /> Approve
+                                 </button>
+                               )}
                                <a href={d.fileUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center text-blue-600 hover:text-blue-800 hover:underline">
                                  <FileText className="w-4 h-4 mr-1" /> View
                                </a>
@@ -127,6 +155,11 @@ export function DrawingRegister({ parts, initialDrawings }: { parts: Part[], ini
            setDrawings(prev => [...prev, newDrawing]);
         }}
       />
+      {toastMessage && (
+        <div className="fixed bottom-4 right-4 bg-slate-900 text-white px-6 py-3 rounded-lg shadow-lg animate-in fade-in slide-in-from-bottom-5 z-50">
+          {toastMessage}
+        </div>
+      )}
     </div>
   );
 }

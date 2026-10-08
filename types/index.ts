@@ -81,6 +81,8 @@ export interface Drawing {
   revision: string;   // "Rev A", "Rev B", "Rev C"
   /** Only ONE revision per part can be approved at a time (Rule 1) */
   approved: boolean;
+  approvedBy?: string;
+  approvedAt?: string; // ISO date
   uploadedBy: string;
   uploadedAt: string; // ISO date
   fileUrl: string;
