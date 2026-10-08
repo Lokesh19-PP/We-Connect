@@ -1,27 +1,26 @@
 import { Suspense } from 'react';
+import Link from 'next/link';
+import { JobDetailClient } from '@/components/jobs/job-detail-client';
+import { ArrowLeft, Inbox } from 'lucide-react';
 
-async function JobContent({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  return (
-    <div className="p-8 bg-white border border-slate-200 rounded-xl shadow-2xs text-center text-slate-500 text-sm">
-      Job detail view for {id}. Owned by Tanmay.
-    </div>
-  );
+interface PageProps {
+  params: Promise<{ id: string }>;
 }
 
-export default function JobDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+export default async function JobDetailPage({ params }: PageProps) {
+  const { id } = await params;
+
   return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
-        Job Detail
-      </h1>
-      <Suspense fallback={<div className="p-8 bg-white border border-slate-200 rounded-xl text-center text-slate-400 text-sm">Loading job detail...</div>}>
-        <JobContent params={params} />
-      </Suspense>
-    </div>
+    <Suspense
+      fallback={
+        <div className="max-w-6xl mx-auto space-y-6 animate-pulse p-4">
+          <div className="h-8 w-48 bg-slate-200 rounded-lg" />
+          <div className="h-44 bg-slate-200 rounded-2xl" />
+          <div className="h-64 bg-slate-200 rounded-2xl" />
+        </div>
+      }
+    >
+      <JobDetailClient id={id} />
+    </Suspense>
   );
 }
