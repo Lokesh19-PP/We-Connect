@@ -3,8 +3,10 @@
 // ──────────────────────────────────────────────
 // VendorFlow – Executive Subcontracting Dashboard
 // Route: / (app/page.tsx)
-// Owned by Lokesh (Team Lead) (§8)
+// Interactive filters, vendor reminder dialog, tooltips
+// Owned by Lokesh (Team Lead) (§8 & Prompt 4)
 // ──────────────────────────────────────────────
+import { useState } from 'react';
 import Link from 'next/link';
 import {
   SummaryCards,
@@ -13,12 +15,16 @@ import {
   JobsOverviewTable,
   SnapshotsSection,
 } from '@/components/dashboard';
-import { LayoutDashboard, Plus, Upload, Building2 } from 'lucide-react';
+import { LayoutDashboard, Plus, Upload, Building2, Filter } from 'lucide-react';
 
 export default function DashboardPage() {
+  const [selectedVendor, setSelectedVendor] = useState('All Vendors');
+  const [selectedPartType, setSelectedPartType] = useState('All Part Types');
+  const [selectedProject, setSelectedProject] = useState('All Projects');
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-8">
-      {/* Dashboard Top Header */}
+      {/* Dashboard Top Header & Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight flex items-center space-x-2">
@@ -30,7 +36,7 @@ export default function DashboardPage() {
           </p>
         </div>
 
-        {/* Action Buttons */}
+        {/* Header Action Buttons */}
         <div className="flex items-center space-x-3">
           <Link
             href="/vendors"
@@ -58,8 +64,75 @@ export default function DashboardPage() {
         </div>
       </div>
 
+      {/* Interactive Dashboard Local Filter Toolbar */}
+      <div className="p-3.5 bg-white border border-slate-200 rounded-xl shadow-2xs flex items-center justify-between">
+        <div className="flex items-center space-x-3 text-xs">
+          <div className="flex items-center space-x-1.5 text-slate-500 font-bold">
+            <Filter className="w-4 h-4 text-blue-600" />
+            <span>Dashboard Filters:</span>
+          </div>
+
+          {/* Vendor Filter */}
+          <select
+            value={selectedVendor}
+            onChange={(e) => setSelectedVendor(e.target.value)}
+            className="bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1.5 font-medium text-slate-700 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="All Vendors">All Vendors</option>
+            <option value="Shree Fabricators">Shree Fabricators</option>
+            <option value="Om Engg Works">Om Engg Works</option>
+            <option value="Patil Steel">Patil Steel</option>
+            <option value="Kulkarni Engineering">Kulkarni Engineering</option>
+            <option value="Deshmukh Metalworks">Deshmukh Metalworks</option>
+          </select>
+
+          {/* Part Type Filter */}
+          <select
+            value={selectedPartType}
+            onChange={(e) => setSelectedPartType(e.target.value)}
+            className="bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1.5 font-medium text-slate-700 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="All Part Types">Part Type: All</option>
+            <option value="Bracket">Bracket</option>
+            <option value="Frame">Frame</option>
+            <option value="Stand">Stand</option>
+            <option value="Handle">Handle</option>
+            <option value="Flange">Flange</option>
+          </select>
+
+          {/* Project Filter */}
+          <select
+            value={selectedProject}
+            onChange={(e) => setSelectedProject(e.target.value)}
+            className="bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1.5 font-medium text-slate-700 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="All Projects">Project: All</option>
+            <option value="Boiler B-200">Boiler B-200</option>
+            <option value="Boiler B-300">Boiler B-300</option>
+          </select>
+        </div>
+
+        {(selectedVendor !== 'All Vendors' || selectedPartType !== 'All Part Types' || selectedProject !== 'All Projects') && (
+          <button
+            type="button"
+            onClick={() => {
+              setSelectedVendor('All Vendors');
+              setSelectedPartType('All Part Types');
+              setSelectedProject('All Projects');
+            }}
+            className="text-[11px] font-bold text-blue-600 hover:text-blue-800"
+          >
+            Reset Filters
+          </button>
+        )}
+      </div>
+
       {/* 1. 5 Summary Stat Cards */}
-      <SummaryCards />
+      <SummaryCards
+        selectedVendor={selectedVendor}
+        selectedPartType={selectedPartType}
+        selectedProject={selectedProject}
+      />
 
       {/* 2. Main 2-Column Grid: Needs Action Today & 14-Day Assembly Calendar */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -68,7 +141,11 @@ export default function DashboardPage() {
       </div>
 
       {/* 3. Jobs Overview Table */}
-      <JobsOverviewTable />
+      <JobsOverviewTable
+        selectedVendor={selectedVendor}
+        selectedPartType={selectedPartType}
+        selectedProject={selectedProject}
+      />
 
       {/* 4. Bottom 3 Snapshots: Vendor, Quality, Payment */}
       <SnapshotsSection />
