@@ -134,6 +134,11 @@ export interface Delivery {
   quantity: number;
   challanNumber: string;
   notes: string;
+  /** Dispatch details captured at goods receipt */
+  vehicleNumber?: string;
+  transporterName?: string;
+  /** File name / URL of attached challan / delivery note scan */
+  challanFileUrl?: string;
 }
 
 export interface Inspection {
