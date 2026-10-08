@@ -1,3 +1,6 @@
+// ──────────────────────────────────────────────
+// We Connect – Export Barrel File for Shared UI Components
+// ──────────────────────────────────────────────
 export * from "./button"
 export * from "./page-header"
 export * from "./stat-card"
