@@ -218,23 +218,27 @@ export function NewJobDialog({
             )}
 
             {/* Approved drawing revision association notice */}
-            <div className="mt-2 p-2.5 bg-blue-50/70 border border-blue-200/80 rounded-lg flex items-center justify-between text-[11px]">
-              <div className="flex items-center gap-2 text-blue-900">
+            <div className="mt-2 p-3 bg-blue-50/70 border border-blue-200/80 rounded-xl flex items-center justify-between text-xs">
+              <div className="flex items-center gap-2.5 text-blue-900">
                 <FileCheck2 className="w-4 h-4 text-blue-600 shrink-0" />
-                <span>
-                  Associated Drawing Revision:{' '}
-                  <strong className="font-semibold text-blue-950">
-                    {approvedDrawing ? approvedDrawing.revision : 'No approved revision'}
-                  </strong>
-                </span>
+                <div>
+                  <span className="font-semibold text-blue-950">
+                    Approved Revision: {approvedDrawing ? approvedDrawing.revision : 'None approved'}
+                  </span>
+                  {approvedDrawing && (
+                    <span className="text-[11px] text-blue-700 block">
+                      Uploaded by {approvedDrawing.uploadedBy} ({approvedDrawing.uploadedAt})
+                    </span>
+                  )}
+                </div>
               </div>
               {approvedDrawing ? (
-                <span className="text-emerald-700 font-medium bg-emerald-100/60 px-2 py-0.5 rounded text-[10px]">
-                  Approved & Locked
+                <span className="text-emerald-700 font-semibold bg-emerald-100 px-2.5 py-1 rounded-md text-[10px] border border-emerald-300/50">
+                  Rule 1 Compliant (Approved)
                 </span>
               ) : (
-                <span className="text-amber-700 font-medium bg-amber-100 px-2 py-0.5 rounded text-[10px]">
-                  Needs Approval
+                <span className="text-amber-700 font-semibold bg-amber-100 px-2.5 py-1 rounded-md text-[10px] border border-amber-300/50">
+                  Awaiting Engineering Approval
                 </span>
               )}
             </div>
