@@ -7,8 +7,8 @@ import {
   getInvoicePaymentsForJob,
 } from '@/data/sample';
 import { getPaymentStatus } from '@/lib/rules';
-import { FileWarning, ChevronRight, Clock, AlertCircle } from 'lucide-react';
-import { Badge } from '@/components/ui/badge'; // might need to create this or use raw tailwind
+import { FileWarning, ChevronRight, Clock } from 'lucide-react';
+import messages from '@/messages/en.json';
 
 const WORKSHOP_ID = 'ws-3'; // Workshop C (Patil Steel)
 
@@ -29,7 +29,7 @@ export default function WorkshopPage() {
       {needsActionJobs.length > 0 && (
         <section className="space-y-3">
           <h2 className="text-sm font-bold text-amber-500 uppercase tracking-wider px-1">
-            Needs your action
+            {messages.workshop.needsAction}
           </h2>
           <div className="space-y-3">
             {needsActionJobs.map((job) => (
@@ -62,7 +62,7 @@ export default function WorkshopPage() {
       {/* My Jobs Section */}
       <section className="space-y-3">
         <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wider px-1">
-          My Jobs
+          {messages.workshop.myJobs}
         </h2>
         <div className="space-y-3">
           {myJobs.map((job) => {
@@ -84,7 +84,7 @@ export default function WorkshopPage() {
                       {job.partDisplayName}
                     </h3>
                     <div className="flex items-center space-x-3 text-sm text-slate-400">
-                      <span>Qty: {job.quantity}</span>
+                      <span>{messages.workshop.qty}: {job.quantity}</span>
                       <div className="flex items-center space-x-1">
                         <Clock className="w-4 h-4" />
                         <span>{new Date(job.dueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</span>
@@ -97,7 +97,7 @@ export default function WorkshopPage() {
                 </div>
 
                 <div className="mt-3 pt-3 border-t border-slate-700/50 flex justify-between items-center text-sm">
-                  <span className="text-slate-400">Payment Status</span>
+                  <span className="text-slate-400">{messages.workshop.paymentStatus}</span>
                   <span className={`font-semibold ${
                     paymentStatus === 'Paid' ? 'text-emerald-400' :
                     paymentStatus === 'Ready' ? 'text-blue-400' :

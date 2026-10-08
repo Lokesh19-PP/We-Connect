@@ -1,13 +1,14 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { getJob, getDrawings, getAcknowledgementsForJob, getStatusUpdatesForJob, getDeliveriesForJob, getInspectionsForJob, getInvoicePaymentsForJob } from '@/data/sample';
 import { canStartWork } from '@/lib/rules';
-import { CheckCircle2, FileText, ZoomIn, Lock, Camera, Image as ImageIcon, AlertCircle, Receipt, Upload, FileUp } from 'lucide-react';
+import { CheckCircle2, FileText, ZoomIn, Lock, Camera, Image as ImageIcon, AlertCircle, Receipt, Upload, FileUp, WifiOff } from 'lucide-react';
 import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { getPaymentStatus } from '@/lib/rules';
+import messages from '@/messages/en.json';
 
 export default function JobClient({ jobId }: { jobId: string }) {
   const job = getJob(jobId);
@@ -19,9 +20,23 @@ export default function JobClient({ jobId }: { jobId: string }) {
   const invoiceInputRef = useRef<HTMLInputElement>(null);
   const [invoiceAmount, setInvoiceAmount] = useState<string>('');
   const [localInvoice, setLocalInvoice] = useState<{ amount: number, file: string } | null>(null);
+  const [isOnline, setIsOnline] = useState(true);
+  const [isCompressing, setIsCompressing] = useState(false);
+
+  useEffect(() => {
+    setIsOnline(navigator.onLine);
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   if (!job) {
-    return <div className="text-slate-400 p-6 text-center">Job not found.</div>;
+    return <div className="text-slate-400 p-6 text-center">{messages.workshop.jobNotFound}</div>;
   }
 
   const allDrawings = getDrawings();
@@ -50,17 +65,28 @@ export default function JobClient({ jobId }: { jobId: string }) {
     setLocalAckTime(new Date().toISOString());
   };
 
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       setUploadFailed(false);
+      setIsCompressing(true);
+      
       const reader = new FileReader();
       reader.onload = (ev) => {
-        setPhotoPreview(ev.target?.result as string);
-        // Simulate a chance of failure for demo purposes
-        if (Math.random() < 0.3) {
-          setUploadFailed(true);
-        }
+        const img = new Image();
+        img.src = ev.target?.result as string;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 800;
+          const scaleSize = MAX_WIDTH / img.width;
+          canvas.width = MAX_WIDTH;
+          canvas.height = img.height * scaleSize;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
+          setPhotoPreview(canvas.toDataURL('image/jpeg', 0.6));
+          setIsCompressing(false);
+          if (Math.random() < 0.3) setUploadFailed(true);
+        };
       };
       reader.readAsDataURL(file);
     }
@@ -100,11 +126,18 @@ export default function JobClient({ jobId }: { jobId: string }) {
 
   return (
     <div className="space-y-6 pb-20">
+      {!isOnline && (
+        <div className="bg-amber-500/10 border-b border-amber-500/20 text-amber-500 text-xs font-bold p-3 flex items-center justify-center -mx-4 -mt-6 mb-4">
+          <WifiOff className="w-4 h-4 mr-2" />
+          {messages.workshop.offlineMsg}
+        </div>
+      )}
+
       <div className="flex items-center space-x-3 text-slate-400 mb-2">
         <Link href="/workshop" className="p-2 -ml-2 active:bg-slate-800 rounded-full">
           <ChevronLeft className="w-6 h-6 text-slate-300" />
         </Link>
-        <span className="text-sm font-semibold">Back to Jobs</span>
+        <span className="text-sm font-semibold">{messages.workshop.backToJobs}</span>
       </div>
 
       <div className="bg-slate-900 border-b border-slate-800 pb-4">
@@ -113,16 +146,16 @@ export default function JobClient({ jobId }: { jobId: string }) {
         </h1>
         <div className="mt-2 flex items-center space-x-4 text-slate-300 text-base">
           <span className="font-semibold bg-slate-800 px-3 py-1 rounded-lg">
-            Qty: {job.quantity}
+            {messages.workshop.qty}: {job.quantity}
           </span>
-          <span>Due: {new Date(job.dueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</span>
+          <span>{messages.workshop.due}: {new Date(job.dueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</span>
         </div>
       </div>
 
       {approvedDrawing && (
         <section className="space-y-3">
           <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wider px-1">
-            Drawing Reference
+            {messages.workshop.drawingRef}
           </h2>
           <div className="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-4">
             <div className="flex items-center justify-between mb-4">
@@ -132,7 +165,7 @@ export default function JobClient({ jobId }: { jobId: string }) {
                 </div>
                 <div>
                   <h3 className="font-bold text-slate-200">{approvedDrawing.revision}</h3>
-                  <p className="text-xs text-emerald-400">Approved by Engineering</p>
+                  <p className="text-xs text-emerald-400">{messages.workshop.approvedByEng}</p>
                 </div>
               </div>
               <button className="p-3 bg-slate-700 rounded-xl active:bg-slate-600 transition-colors">
@@ -145,14 +178,14 @@ export default function JobClient({ jobId }: { jobId: string }) {
                 onClick={handleConfirmDrawing}
                 className="w-full min-h-[56px] text-lg bg-amber-500 hover:bg-amber-600 text-black font-bold rounded-xl active:scale-95 transition-transform"
               >
-                Confirm drawing received
+                {messages.workshop.confirmDrawingBtn}
               </Button>
             ) : (
               <div className="flex items-center space-x-3 bg-emerald-500/10 border border-emerald-500/30 p-4 rounded-xl">
                 <CheckCircle2 className="w-6 h-6 text-emerald-500" />
                 <div>
-                  <p className="text-sm font-bold text-emerald-400">Drawing acknowledged</p>
-                  <p className="text-xs text-emerald-500/80">You can now post updates</p>
+                  <p className="text-sm font-bold text-emerald-400">{messages.workshop.drawingAck}</p>
+                  <p className="text-xs text-emerald-500/80">{messages.workshop.canPostUpdates}</p>
                 </div>
               </div>
             )}
@@ -162,7 +195,7 @@ export default function JobClient({ jobId }: { jobId: string }) {
 
       <section className="space-y-3">
         <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wider px-1">
-          Post Status Update
+          {messages.workshop.postUpdateTitle}
         </h2>
         
         {!canStart && (
@@ -181,44 +214,53 @@ export default function JobClient({ jobId }: { jobId: string }) {
               className="hidden" 
               ref={fileInputRef}
               onChange={handlePhotoUpload}
-              disabled={!canStart}
+              disabled={!canStart || isCompressing}
             />
             <Button 
               variant="secondary" 
               className="flex-1 min-h-[48px] bg-slate-700 hover:bg-slate-600"
-              disabled={!canStart}
+              disabled={!canStart || isCompressing}
               onClick={() => fileInputRef.current?.click()}
             >
               <Camera className="w-5 h-5 mr-2" />
-              Add photo
+              {isCompressing ? 'Compressing...' : messages.workshop.addPhoto}
             </Button>
           </div>
 
-          {photoPreview && (
+          {(photoPreview || isCompressing) && (
             <div className="relative rounded-xl overflow-hidden border border-slate-700 bg-slate-900 h-32 flex items-center justify-center">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={photoPreview} alt="Preview" className="object-cover h-full w-full opacity-80" />
-              
-              {uploadFailed && (
-                <div className="absolute inset-0 bg-slate-900/80 flex flex-col items-center justify-center space-y-2">
-                  <AlertCircle className="w-8 h-8 text-red-500" />
-                  <span className="text-red-400 font-bold text-sm">Upload failed</span>
-                  <Button size="sm" variant="outline" className="bg-slate-800" onClick={() => setUploadFailed(false)}>
-                    Try again
-                  </Button>
+              {isCompressing && (
+                <div className="w-full h-full bg-slate-800 animate-pulse flex items-center justify-center">
+                  <span className="text-slate-400 text-xs font-bold">Processing...</span>
                 </div>
+              )}
+              {photoPreview && !isCompressing && (
+                <>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={photoPreview} alt="Preview" className="object-cover h-full w-full opacity-80" />
+                  
+                  {uploadFailed && (
+                    <div className="absolute inset-0 bg-slate-900/80 flex flex-col items-center justify-center space-y-2">
+                      <AlertCircle className="w-8 h-8 text-red-500" />
+                      <span className="text-red-400 font-bold text-sm">{messages.workshop.uploadFailed}</span>
+                      <Button size="sm" variant="outline" className="bg-slate-800" onClick={() => setUploadFailed(false)}>
+                        {messages.workshop.tryAgain}
+                      </Button>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           )}
 
           <div className="grid grid-cols-1 gap-3 pt-2">
-            <Button disabled={!canStart || uploadFailed} onClick={() => handlePostStatus('Started')} variant="outline" className="min-h-[56px] text-base justify-start px-6 bg-slate-800 border-slate-700 text-white">
+            <Button disabled={!canStart || uploadFailed || isCompressing} onClick={() => handlePostStatus('Started')} variant="outline" className="min-h-[56px] text-base justify-start px-6 bg-slate-800 border-slate-700 text-white">
               Started
             </Button>
-            <Button disabled={!canStart || uploadFailed} onClick={() => handlePostStatus('In progress')} variant="outline" className="min-h-[56px] text-base justify-start px-6 bg-slate-800 border-slate-700 text-white">
+            <Button disabled={!canStart || uploadFailed || isCompressing} onClick={() => handlePostStatus('In progress')} variant="outline" className="min-h-[56px] text-base justify-start px-6 bg-slate-800 border-slate-700 text-white">
               In progress
             </Button>
-            <Button disabled={!canStart || uploadFailed} onClick={() => handlePostStatus('Ready for dispatch')} variant="outline" className="min-h-[56px] text-base justify-start px-6 bg-slate-800 border-slate-700 text-white">
+            <Button disabled={!canStart || uploadFailed || isCompressing} onClick={() => handlePostStatus('Ready for dispatch')} variant="outline" className="min-h-[56px] text-base justify-start px-6 bg-slate-800 border-slate-700 text-white">
               Ready for dispatch
             </Button>
           </div>
@@ -228,7 +270,7 @@ export default function JobClient({ jobId }: { jobId: string }) {
       {allUpdates.length > 0 && (
         <section className="space-y-3">
           <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wider px-1">
-            Recent Updates
+            {messages.workshop.recentUpdates}
           </h2>
           <div className="space-y-3">
             {allUpdates.map((update) => (
@@ -263,13 +305,13 @@ export default function JobClient({ jobId }: { jobId: string }) {
       {isDelivered && (
         <section className="space-y-3 pb-8">
           <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wider px-1">
-            Payment Status
+            {messages.workshop.paymentStatus}
           </h2>
           <div className="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-4 space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 <Receipt className="w-6 h-6 text-slate-400" />
-                <span className="font-semibold text-slate-200">Current Status</span>
+                <span className="font-semibold text-slate-200">{messages.workshop.currentStatus}</span>
               </div>
               <span className={`px-3 py-1 rounded-full text-xs font-bold ${
                 paymentStatus === 'Paid' ? 'bg-emerald-500/20 text-emerald-400' :
@@ -284,13 +326,13 @@ export default function JobClient({ jobId }: { jobId: string }) {
 
             {paymentStatus === 'On hold for quality' && (
               <div className="text-sm text-red-400/90 bg-red-500/10 p-3 rounded-xl">
-                Reason: Inspection failed or is pending review.
+                {messages.workshop.onHoldReason}
               </div>
             )}
 
             {!activeInvoice && (
               <div className="pt-3 border-t border-slate-700/50 space-y-3">
-                <p className="text-sm text-slate-300">Upload your invoice to get paid.</p>
+                <p className="text-sm text-slate-300">{messages.workshop.uploadInvoiceMsg}</p>
                 <div className="flex items-center space-x-3">
                   <div className="relative flex-1">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">₹</span>
@@ -298,7 +340,7 @@ export default function JobClient({ jobId }: { jobId: string }) {
                       type="number"
                       value={invoiceAmount}
                       onChange={(e) => setInvoiceAmount(e.target.value)}
-                      placeholder="Amount"
+                      placeholder={messages.workshop.amountPlaceholder}
                       className="w-full bg-slate-900 border border-slate-700 rounded-xl py-3 pl-8 pr-4 text-white focus:outline-hidden focus:border-blue-500"
                     />
                   </div>
@@ -315,7 +357,7 @@ export default function JobClient({ jobId }: { jobId: string }) {
                     className="min-h-[48px] bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl"
                   >
                     <Upload className="w-5 h-5 mr-2" />
-                    Upload
+                    {messages.workshop.uploadBtn}
                   </Button>
                 </div>
               </div>

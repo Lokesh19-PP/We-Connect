@@ -79,5 +79,31 @@
   "loading": {
     "default": "Loading..."
   },
-  "comingSoon": "Coming soon"
+  "comingSoon": "Coming soon",
+  "workshop": {
+    "dashboardTitle": "Workshop Dashboard",
+    "needsAction": "Needs your action",
+    "myJobs": "My Jobs",
+    "qty": "Qty",
+    "due": "Due",
+    "paymentStatus": "Payment Status",
+    "backToJobs": "Back to Jobs",
+    "jobNotFound": "Job not found",
+    "drawingRef": "Drawing Reference",
+    "approvedByEng": "Approved by Engineering",
+    "confirmDrawingBtn": "Confirm drawing received",
+    "drawingAck": "Drawing acknowledged",
+    "canPostUpdates": "You can now post updates",
+    "postUpdateTitle": "Post Status Update",
+    "addPhoto": "Add photo",
+    "uploadFailed": "Upload failed",
+    "tryAgain": "Try again",
+    "recentUpdates": "Recent Updates",
+    "currentStatus": "Current Status",
+    "onHoldReason": "Reason: Inspection failed or is pending review.",
+    "uploadInvoiceMsg": "Upload your invoice to get paid.",
+    "amountPlaceholder": "Amount",
+    "uploadBtn": "Upload",
+    "offlineMsg": "No network. Your update will be sent when you are online."
+  }
 }
