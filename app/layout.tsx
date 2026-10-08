@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
+import { Suspense } from 'react';
 import { RoleProvider } from '@/lib/role-context';
 import { AppShell } from '@/components/layout/app-shell';
 
@@ -26,9 +27,11 @@ export default function RootLayout({
       className={`${inter.variable} h-full antialiased font-sans`}
     >
       <body className="min-h-full flex flex-col bg-[#F6F7F9] text-[#111827] selection:bg-[#F97316]/20 selection:text-[#F97316]">
-        <RoleProvider>
-          <AppShell>{children}</AppShell>
-        </RoleProvider>
+        <Suspense fallback={<div className="min-h-screen bg-[#0F1B33]" />}>
+          <RoleProvider>
+            <AppShell>{children}</AppShell>
+          </RoleProvider>
+        </Suspense>
       </body>
     </html>
   );
