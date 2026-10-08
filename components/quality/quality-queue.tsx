@@ -3,12 +3,14 @@
 import { useState } from 'react';
 import { getQualityQueue, QualityQueueRow } from '@/data/quality';
 import { RiskBadge } from './risk-badge';
+import { InspectionDialog } from './inspection-dialog';
 
 type Tab = 'To inspect' | 'Rework' | 'Reinspection due' | 'Completed';
 const TABS: Tab[] = ['To inspect', 'Rework', 'Reinspection due', 'Completed'];
 
 export function QualityQueue() {
   const [activeTab, setActiveTab] = useState<Tab>('To inspect');
+  const [selectedRow, setSelectedRow] = useState<QualityQueueRow | null>(null);
   const queue = getQualityQueue();
   
   const filteredRows = queue.filter(row => row.statusTab === activeTab);
@@ -67,8 +69,11 @@ export function QualityQueue() {
                       <RiskBadge risk={row.risk} />
                     </td>
                     <td className="px-4 py-3">
-                      <button className="text-indigo-600 hover:text-indigo-700 font-medium">
-                        View
+                      <button 
+                        onClick={() => setSelectedRow(row)}
+                        className="text-indigo-600 hover:text-indigo-700 font-medium"
+                      >
+                        {activeTab === 'To inspect' || activeTab === 'Reinspection due' ? 'Inspect' : 'View'}
                       </button>
                     </td>
                   </tr>
@@ -78,6 +83,14 @@ export function QualityQueue() {
           </table>
         </div>
       </div>
+
+      {selectedRow && (
+        <InspectionDialog 
+          row={selectedRow}
+          isOpen={!!selectedRow}
+          onClose={() => setSelectedRow(null)}
+        />
+      )}
     </div>
   );
 }
