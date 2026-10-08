@@ -11,9 +11,28 @@ const TABS: Tab[] = ['To inspect', 'Rework', 'Reinspection due', 'Completed'];
 export function QualityQueue() {
   const [activeTab, setActiveTab] = useState<Tab>('To inspect');
   const [selectedRow, setSelectedRow] = useState<QualityQueueRow | null>(null);
-  const queue = getQualityQueue();
+  const [queue, setQueue] = useState<QualityQueueRow[]>(getQualityQueue());
   
   const filteredRows = queue.filter(row => row.statusTab === activeTab);
+
+  const handleReject = (rowId: string, remarks: string, reinspectionDate: string) => {
+    setQueue(prev => prev.map(r => r.id === rowId ? {
+      ...r, 
+      statusTab: 'Rework',
+      risk: 'Reinspection due'
+    } : r));
+    setSelectedRow(null);
+  };
+
+  const handleAccept = (rowId: string, qtyAccepted: number) => {
+    setQueue(prev => prev.map(r => r.id === rowId ? {
+      ...r,
+      statusTab: 'Completed',
+      quantityDelivered: qtyAccepted,
+      risk: 'On track'
+    } : r));
+    setSelectedRow(null);
+  };
 
   return (
     <div className="space-y-4">
@@ -89,6 +108,8 @@ export function QualityQueue() {
           row={selectedRow}
           isOpen={!!selectedRow}
           onClose={() => setSelectedRow(null)}
+          onAccept={handleAccept}
+          onReject={handleReject}
         />
       )}
     </div>

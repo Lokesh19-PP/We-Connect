@@ -1,18 +1,21 @@
 'use client';
 
 import { useState } from 'react';
-import { QualityQueueRow } from '@/data/quality';
+import { getQualityQueue, QualityQueueRow } from '@/data/quality';
 import { useRole } from '@/lib/role-context';
 import { can } from '@/lib/permissions';
-import { getAcknowledgementsForJob, getDrawingsForPart } from '@/data/sample';
+import { getAcknowledgementsForJob, getDrawingsForPart, getDeliveriesForJob, getInspectionsForJob, getInvoicePaymentsForJob } from '@/data/sample';
+import { getPaymentStatus } from '@/lib/rules';
 
 interface InspectionDialogProps {
   row: QualityQueueRow;
   isOpen: boolean;
   onClose: () => void;
+  onAccept: (rowId: string, qtyAccepted: number) => void;
+  onReject: (rowId: string, remarks: string, reinspectionDate: string) => void;
 }
 
-export function InspectionDialog({ row, isOpen, onClose }: InspectionDialogProps) {
+export function InspectionDialog({ row, isOpen, onClose, onAccept, onReject }: InspectionDialogProps) {
   const { role } = useRole();
   const hasPermission = can(role, 'inspection.record');
   
@@ -23,6 +26,9 @@ export function InspectionDialog({ row, isOpen, onClose }: InspectionDialogProps
   const [dimCorrect, setDimCorrect] = useState(false);
   const [workOk, setWorkOk] = useState(false);
   const [revCorrect, setRevCorrect] = useState(false);
+  
+  const [reinspectionDate, setReinspectionDate] = useState('');
+  const [error, setError] = useState('');
 
   if (!isOpen) return null;
 
@@ -35,6 +41,32 @@ export function InspectionDialog({ row, isOpen, onClose }: InspectionDialogProps
     ? `Acknowledged on ${latestAck.acknowledgedAt} by ${latestAck.acknowledgedBy}`
     : 'No acknowledgement found';
 
+  const deliveries = getDeliveriesForJob(row.jobId);
+  // Add a fake pending inspection for this delivery if not present, to show correct payment status.
+  const inspections = getInspectionsForJob(row.jobId);
+  const invoices = getInvoicePaymentsForJob(row.jobId);
+  const invoice = invoices.length > 0 ? invoices[0] : undefined;
+  
+  // Calculate current payment status
+  const paymentStatus = getPaymentStatus(deliveries, inspections, invoice);
+
+  const handleRejectClick = () => {
+    if (!remarks.trim()) {
+      setError('Remarks are required when rejecting.');
+      return;
+    }
+    if (!reinspectionDate) {
+      setError('Please schedule a reinspection date.');
+      return;
+    }
+    setError('');
+    onReject(row.id, remarks, reinspectionDate);
+  };
+
+  const handleAcceptClick = () => {
+    onAccept(row.id, qtyAccepted);
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
       <div className="bg-white rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
@@ -46,6 +78,12 @@ export function InspectionDialog({ row, isOpen, onClose }: InspectionDialogProps
             &times;
           </button>
         </div>
+
+        {paymentStatus === 'On hold for quality' && (
+          <div className="bg-rose-50 border-y border-rose-200 px-6 py-3 text-rose-800 text-sm font-medium">
+            Payment on hold for quality
+          </div>
+        )}
 
         <div className="p-6 space-y-6">
           {/* Header Info */}
@@ -123,7 +161,7 @@ export function InspectionDialog({ row, isOpen, onClose }: InspectionDialogProps
 
           {/* Remarks & Photo */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Remarks</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Remarks <span className="text-rose-500">*</span></label>
             <textarea 
               value={remarks}
               onChange={e => setRemarks(e.target.value)}
@@ -133,12 +171,29 @@ export function InspectionDialog({ row, isOpen, onClose }: InspectionDialogProps
             />
           </div>
           
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Photo Upload</label>
-            <div className="border-2 border-dashed border-slate-300 rounded-md p-4 text-center cursor-pointer hover:bg-slate-50 text-sm text-slate-500">
-              Click to upload inspection photo (fake)
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Schedule Reinspection</label>
+              <input 
+                type="date"
+                value={reinspectionDate}
+                onChange={e => setReinspectionDate(e.target.value)}
+                className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Photo Upload</label>
+              <div className="border-2 border-dashed border-slate-300 rounded-md p-2 text-center cursor-pointer hover:bg-slate-50 text-sm text-slate-500 h-[38px] flex items-center justify-center">
+                Upload photo
+              </div>
             </div>
           </div>
+          
+          {error && (
+            <div className="text-sm text-rose-600 font-medium bg-rose-50 p-3 rounded-md">
+              {error}
+            </div>
+          )}
         </div>
 
         {/* Actions */}
@@ -150,13 +205,13 @@ export function InspectionDialog({ row, isOpen, onClose }: InspectionDialogProps
           {hasPermission ? (
             <>
               <button 
-                onClick={() => alert('Rejected')}
+                onClick={handleRejectClick}
                 className="px-4 py-2 text-sm font-medium text-white bg-rose-600 hover:bg-rose-700 rounded-md"
               >
                 Reject
               </button>
               <button 
-                onClick={() => alert('Accepted')}
+                onClick={handleAcceptClick}
                 className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-md"
               >
                 Accept
