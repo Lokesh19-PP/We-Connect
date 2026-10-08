@@ -41,13 +41,25 @@ export default function JobClient({ jobId }: { jobId: string }) {
 
   const allDrawings = getDrawings();
   const acks = getAcknowledgementsForJob(jobId);
+  const initialAck = acks.find((a) => a.acknowledgedAt !== null);
   const existingUpdates = getStatusUpdatesForJob(jobId);
   const approvedDrawing = allDrawings.find((d) => d.partId === job.partId && d.approved);
   const deliveries = getDeliveriesForJob(jobId);
   const inspections = getInspectionsForJob(jobId);
   const invoices = getInvoicePaymentsForJob(jobId);
 
-  const activeInvoice = localInvoice ? { invoiceNumber: 'LOCAL-123', amount: localInvoice.amount, paymentStatus: 'Awaiting approval' as any } : invoices[0];
+  const activeInvoice = localInvoice ? {
+    id: 'inv-local',
+    jobId,
+    workshopId: job.workshopId,
+    invoiceNumber: 'LOCAL-123',
+    invoiceDate: new Date().toISOString().split('T')[0],
+    amount: localInvoice.amount,
+    invoiceFileUrl: '/invoice.pdf',
+    paymentStatus: 'Awaiting approval' as const,
+    paidDate: null,
+    paidAmount: null,
+  } : invoices[0];
   const paymentStatus = getPaymentStatus(deliveries, inspections, activeInvoice);
   
   // Is delivered?
