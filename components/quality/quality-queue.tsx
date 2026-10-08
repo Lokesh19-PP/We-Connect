@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { getQualityQueue, QualityQueueRow } from '@/data/quality';
 import { RiskBadge } from './risk-badge';
 import { InspectionDialog } from './inspection-dialog';
+import { InspectionHistoryModal } from './inspection-history-modal';
 
 type Tab = 'To inspect' | 'Rework' | 'Reinspection due' | 'Completed';
 const TABS: Tab[] = ['To inspect', 'Rework', 'Reinspection due', 'Completed'];
@@ -11,6 +12,7 @@ const TABS: Tab[] = ['To inspect', 'Rework', 'Reinspection due', 'Completed'];
 export function QualityQueue() {
   const [activeTab, setActiveTab] = useState<Tab>('To inspect');
   const [selectedRow, setSelectedRow] = useState<QualityQueueRow | null>(null);
+  const [historyRow, setHistoryRow] = useState<QualityQueueRow | null>(null);
   const [queue, setQueue] = useState<QualityQueueRow[]>(getQualityQueue());
   
   const filteredRows = queue.filter(row => row.statusTab === activeTab);
@@ -88,12 +90,20 @@ export function QualityQueue() {
                       <RiskBadge risk={row.risk} />
                     </td>
                     <td className="px-4 py-3">
-                      <button 
-                        onClick={() => setSelectedRow(row)}
-                        className="text-indigo-600 hover:text-indigo-700 font-medium"
-                      >
-                        {activeTab === 'To inspect' || activeTab === 'Reinspection due' ? 'Inspect' : 'View'}
-                      </button>
+                      <div className="flex items-center space-x-3">
+                        <button 
+                          onClick={() => setSelectedRow(row)}
+                          className="text-indigo-600 hover:text-indigo-700 font-medium"
+                        >
+                          {activeTab === 'To inspect' || activeTab === 'Reinspection due' ? 'Inspect' : 'Inspect'}
+                        </button>
+                        <button 
+                          onClick={() => setHistoryRow(row)}
+                          className="text-slate-500 hover:text-slate-700 font-medium"
+                        >
+                          History
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -110,6 +120,14 @@ export function QualityQueue() {
           onClose={() => setSelectedRow(null)}
           onAccept={handleAccept}
           onReject={handleReject}
+        />
+      )}
+
+      {historyRow && (
+        <InspectionHistoryModal 
+          row={historyRow}
+          isOpen={!!historyRow}
+          onClose={() => setHistoryRow(null)}
         />
       )}
     </div>
