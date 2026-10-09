@@ -1,15 +1,16 @@
 import { Suspense } from 'react';
-import Link from 'next/link';
 import { JobDetailClient } from '@/components/jobs/job-detail-client';
-import { ArrowLeft, Inbox } from 'lucide-react';
 
 interface PageProps {
   params: Promise<{ id: string }>;
 }
 
-export default async function JobDetailPage({ params }: PageProps) {
+async function JobContent({ params }: PageProps) {
   const { id } = await params;
+  return <JobDetailClient id={id} />;
+}
 
+export default function JobDetailPage({ params }: PageProps) {
   return (
     <Suspense
       fallback={
@@ -20,7 +21,7 @@ export default async function JobDetailPage({ params }: PageProps) {
         </div>
       }
     >
-      <JobDetailClient id={id} />
+      <JobContent params={params} />
     </Suspense>
   );
 }
