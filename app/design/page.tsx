@@ -483,6 +483,85 @@ export default function DesignSystemPage() {
         </div>
       </section>
 
+      {/* 7. CAD Engineering Drawings & Manufactured Component Assets */}
+      <section className="space-y-4">
+        <div className="border-b border-gray-200 pb-2">
+          <h2 className="text-base font-semibold text-gray-900 flex items-center gap-2">
+            <FileCheck className="h-4 w-4 text-[#F97316]" />
+            7. Engineering Drawings & Component Mock Assets
+          </h2>
+          <p className="text-xs text-gray-500">
+            Realistic CAD technical blueprints and shop-floor quality inspected part previews used across drawings & inspection modules.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* CAD Technical Drawing */}
+          <div className="rounded-[10px] border border-gray-200 bg-white p-5 shadow-xs space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-semibold text-gray-900">DWG-BM-1004-REV B</h3>
+                <p className="text-xs text-gray-500">Boiler Mounting Bracket Technical Blueprint</p>
+              </div>
+              <span className="px-2.5 py-1 text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full">
+                Approved (Rev B)
+              </span>
+            </div>
+
+            <div className="relative rounded-lg overflow-hidden border border-gray-200 bg-gray-100 group">
+              <img
+                src="/images/drawing_cad_preview.jpg"
+                alt="2D CAD Technical Blueprint of Boiler Mounting Bracket"
+                className="w-full h-64 object-contain bg-white transition-transform duration-300 group-hover:scale-105"
+              />
+              <div className="absolute inset-0 bg-gray-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={() =>
+                    addToast("info", "Drawing Blueprint Preview", "DWG-BM-1004 Rev B high-res CAD file loaded.")
+                  }
+                >
+                  View High-Res Blueprint
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {/* Manufactured Shop-Floor Part */}
+          <div className="rounded-[10px] border border-gray-200 bg-white p-5 shadow-xs space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-semibold text-gray-900">Batch #BLR-SP-900</h3>
+                <p className="text-xs text-gray-500">Laser-Cut SS Mounting Bracket (Shree Fabricators)</p>
+              </div>
+              <span className="px-2.5 py-1 text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full">
+                Quality Accepted
+              </span>
+            </div>
+
+            <div className="relative rounded-lg overflow-hidden border border-gray-200 bg-gray-100 group">
+              <img
+                src="/images/industrial_part_photo.jpg"
+                alt="Manufactured Laser-Cut Steel Boiler Bracket on Workbench"
+                className="w-full h-64 object-cover transition-transform duration-300 group-hover:scale-105"
+              />
+              <div className="absolute inset-0 bg-gray-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={() =>
+                    addToast("success", "Batch Inspection Passed", "Physical batch BLR-SP-900 verified against drawing DWG-BM-1004.")
+                  }
+                >
+                  View Inspection Tag Details
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Confirm Dialog Component */}
       <ConfirmDialog
         isOpen={isDialogOpen}
