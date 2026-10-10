@@ -20,6 +20,29 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Project Status
+
+| Phase | Description | Status |
+|-------|-------------|--------|
+| Phase A | Clickable prototype with sample data and demo role switcher | ✅ Done |
+| Phase B | Working version with real login, database, storage, RLS, email, hosting | 📋 Planned |
+
+## Documentation
+
+| Document | Path | Description |
+|----------|------|-------------|
+| Repo Structure | `docs/REPO_STRUCTURE.md` | File placement and folder layout |
+| Team Plan | `docs/team/00_TEAM_PLAN.md` | Ownership, order of work, demo flow |
+| Member Prompts | `docs/team/01–07` | Per-member prompt files |
+| Master Prompt | `docs/prompts/MASTER_PROMPT.md` | First prompt for Antigravity |
+| Prompt Plan | `docs/prompts/PROMPT_PLAN.md` | Full prompt list for Phase A and B |
+| **Phase B Plan** | `docs/phase-b/00_PHASE_B_PLAN.md` | Sequence, ownership, rules, risks |
+| **Manual Setup** | `docs/phase-b/01_manual_setup.md` | Supabase, Vercel, Resend setup steps |
+| **Foundation Prompt** | `docs/phase-b/02_lokesh_foundation_prompt.md` | Lokesh's 6-part foundation prompt |
+| **Member Data Swap** | `docs/phase-b/03_member_data_swap_prompt.md` | Template prompt for all members |
+| **Dashboard & Deploy** | `docs/phase-b/04_dashboard_and_deploy_prompts.md` | Real-data dashboard and Vercel deploy |
+| **Test Checklist** | `docs/phase-b/05_test_checklist.md` | RLS, business rules, demo flow tests |
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:
