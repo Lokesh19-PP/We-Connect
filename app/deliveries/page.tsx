@@ -141,7 +141,7 @@ export default function DeliveriesPage() {
     else { setSortField(field); setSortDir('asc'); }
   }
 
-  function SortIcon({ field }: { field: typeof sortField }) {
+  function renderSortIcon(field: typeof sortField) {
     if (sortField !== field) return <Minus className="w-3 h-3 text-slate-300" />;
     return sortDir === 'asc'
       ? <ChevronUp className="w-3 h-3 text-blue-600" />
@@ -270,13 +270,13 @@ export default function DeliveriesPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-slate-100 bg-slate-50/80">
-                  <Th onClick={() => toggleSort('date')} label="Delivery Date" sort={<SortIcon field="date" />} />
-                  <Th onClick={() => toggleSort('part')} label="Part / Job" sort={<SortIcon field="part" />} />
-                  <Th onClick={() => toggleSort('vendor')} label="Vendor" sort={<SortIcon field="vendor" />} />
+                  <Th onClick={() => toggleSort('date')} label="Delivery Date" sort={renderSortIcon('date')} />
+                  <Th onClick={() => toggleSort('part')} label="Part / Job" sort={renderSortIcon('part')} />
+                  <Th onClick={() => toggleSort('vendor')} label="Vendor" sort={renderSortIcon('vendor')} />
                   <Th
                     onClick={() => toggleSort('quantity')}
                     label="Expected / Received"
-                    sort={<SortIcon field="quantity" />}
+                    sort={renderSortIcon('quantity')}
                   />
                   <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">
                     Challan

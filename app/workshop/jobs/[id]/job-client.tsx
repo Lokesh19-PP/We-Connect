@@ -8,23 +8,34 @@ import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { getPaymentStatus } from '@/lib/rules';
+import type { StatusUpdate, DrawingAcknowledgement } from '@/types';
 import messages from '@/messages/en.json';
+
+interface LocalStatusUpdate {
+  id: string;
+  jobId: string;
+  workshopId: string;
+  status: string;
+  message: string;
+  photoUrl: string | null;
+  updatedAt: string;
+  updatedBy: string;
+}
 
 export default function JobClient({ jobId }: { jobId: string }) {
   const job = getJob(jobId);
   const [localAckTime, setLocalAckTime] = useState<string | null>(null);
-  const [localUpdates, setLocalUpdates] = useState<any[]>([]);
+  const [localUpdates, setLocalUpdates] = useState<LocalStatusUpdate[]>([]);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [uploadFailed, setUploadFailed] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const invoiceInputRef = useRef<HTMLInputElement>(null);
   const [invoiceAmount, setInvoiceAmount] = useState<string>('');
   const [localInvoice, setLocalInvoice] = useState<{ amount: number, file: string } | null>(null);
-  const [isOnline, setIsOnline] = useState(true);
+  const [isOnline, setIsOnline] = useState(() => typeof navigator !== 'undefined' ? navigator.onLine : true);
   const [isCompressing, setIsCompressing] = useState(false);
 
   useEffect(() => {
-    setIsOnline(navigator.onLine);
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
     window.addEventListener('online', handleOnline);
@@ -66,8 +77,18 @@ export default function JobClient({ jobId }: { jobId: string }) {
   const isDelivered = deliveries.length > 0 || localUpdates.some(u => u.status === 'Delivered');
   const isAcknowledged = !!initialAck || !!localAckTime;
 
-  const mockAcks = isAcknowledged 
-    ? [...acks, { drawingId: approvedDrawing?.id, jobId, workshopId: job.workshopId, acknowledgedAt: localAckTime || initialAck?.acknowledgedAt }] as any
+  const mockAcks: DrawingAcknowledgement[] = isAcknowledged 
+    ? [
+        ...acks,
+        {
+          id: 'local-ack',
+          drawingId: approvedDrawing?.id || '',
+          jobId,
+          workshopId: job.workshopId,
+          acknowledgedAt: localAckTime || initialAck?.acknowledgedAt || null,
+          acknowledgedBy: 'Workshop Staff',
+        },
+      ]
     : acks;
   
   const startWorkCheck = canStartWork(job, allDrawings, mockAcks);
@@ -106,9 +127,10 @@ export default function JobClient({ jobId }: { jobId: string }) {
 
   const handlePostStatus = (status: string) => {
     if (uploadFailed) return;
-    const newUpdate = {
+    const newUpdate: LocalStatusUpdate = {
       id: `local-${Date.now()}`,
       jobId,
+      workshopId: job.workshopId,
       status,
       message: '',
       photoUrl: photoPreview,

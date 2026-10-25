@@ -44,7 +44,7 @@ export default function ReportsPage() {
         </div>
         <h2 className="text-lg font-bold text-slate-900">Access Restricted</h2>
         <p className="text-xs text-slate-500 leading-relaxed">
-          The active role <span className="font-semibold text-slate-700">"{role}"</span> is not authorized to view management analytics and financial reports. Switch to Management, Procurement, Engineering, Quality, or Finance role to view.
+          The active role <span className="font-semibold text-slate-700">&quot;{role}&quot;</span> is not authorized to view management analytics and financial reports. Switch to Management, Procurement, Engineering, Quality, or Finance role to view.
         </p>
       </div>
     );

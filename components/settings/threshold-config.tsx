@@ -57,7 +57,7 @@ export function ThresholdConfigSection() {
               <span>Vendor Warning Trigger</span>
             </div>
             <p className="text-[11px] text-slate-500 leading-relaxed">
-              Days without status update before flagging vendor with "No update in N days" warning chip.
+              Days without status update before flagging vendor with &quot;No update in N days&quot; warning chip.
             </p>
             <div className="pt-2 flex items-center space-x-2">
               <input
@@ -81,7 +81,7 @@ export function ThresholdConfigSection() {
               <span>Due Date Risk Alert</span>
             </div>
             <p className="text-[11px] text-slate-500 leading-relaxed">
-              Days before due date or needed assembly date to automatically flag job as "At Risk" or "May miss date".
+              Days before due date or needed assembly date to automatically flag job as &quot;At Risk&quot; or &quot;May miss date&quot;.
             </p>
             <div className="pt-2 flex items-center space-x-2">
               <input

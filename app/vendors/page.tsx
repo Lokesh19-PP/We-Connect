@@ -188,7 +188,7 @@ export default function VendorsPage() {
             <span className="font-semibold text-slate-500">Status:</span>
             <select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as any)}
+              onChange={(e) => setStatusFilter(e.target.value as 'All' | 'Active' | 'Inactive')}
               className="bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1.5 font-medium text-slate-700"
             >
               <option value="All">All Statuses</option>
@@ -202,7 +202,7 @@ export default function VendorsPage() {
             <span className="font-semibold text-slate-500">Performance:</span>
             <select
               value={performanceFilter}
-              onChange={(e) => setPerformanceFilter(e.target.value as any)}
+              onChange={(e) => setPerformanceFilter(e.target.value as 'All' | 'High' | 'Low' | 'Warning')}
               className="bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1.5 font-medium text-slate-700"
             >
               <option value="All">All Performance</option>

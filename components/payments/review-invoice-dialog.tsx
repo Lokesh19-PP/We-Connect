@@ -146,7 +146,7 @@ export function ReviewInvoiceDialog({
               <CheckCircle2 className="w-10 h-10 text-green-500" />
               <p className="text-sm font-semibold text-slate-800">Invoice Approved</p>
               <p className="text-xs text-slate-500 text-center">
-                Status moved to "Awaiting approval". Finance can now mark as paid.
+                Status moved to &quot;Awaiting approval&quot;. Finance can now mark as paid.
               </p>
             </div>
           )}

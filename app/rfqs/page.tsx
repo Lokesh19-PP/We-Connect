@@ -180,7 +180,7 @@ export default function RFQsPage() {
             {notified ? (
               <>
                 <CheckCircle2 className="w-4 h-4 text-white" />
-                <span>Notification Enabled! We'll alert you on launch.</span>
+                <span>Notification Enabled! We&apos;ll alert you on launch.</span>
               </>
             ) : (
               <>

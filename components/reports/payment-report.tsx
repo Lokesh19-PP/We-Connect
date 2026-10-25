@@ -84,7 +84,7 @@ export function PaymentReport({ vendorFilter }: { vendorFilter: string }) {
               <XAxis dataKey="workshopName" stroke="#64748B" fontSize={11} />
               <YAxis stroke="#64748B" fontSize={11} tickFormatter={(val) => `₹${val / 1000}k`} />
               <Tooltip
-                formatter={(value: any) => [`₹${Number(value).toLocaleString()}`, 'Amount']}
+                formatter={(value: unknown) => [`₹${Number(value).toLocaleString()}`, 'Amount']}
                 contentStyle={{
                   backgroundColor: '#0F172A',
                   borderColor: '#1E293B',

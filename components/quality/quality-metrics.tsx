@@ -1,7 +1,7 @@
 'use client';
 
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { getInspections, getJobs, getWorkshops } from '@/data/sample';
+import { getInspections } from '@/data/sample';
 
 export function QualityMetrics() {
   const inspections = getInspections();
@@ -9,9 +9,9 @@ export function QualityMetrics() {
   // We'll calculate the metrics but pad them with some historical baseline 
   // so they match the dashboard's "91% yield" and "5 rework" demo numbers.
   
-  let historicalTotal = 100;
-  let historicalPass = 91;
-  let historicalRework = 4;
+  const historicalTotal = 100;
+  const historicalPass = 91;
+  const historicalRework = 4;
 
   const currentRejected = inspections.filter(i => i.result === 'Rejected').length;
   const currentAccepted = inspections.filter(i => i.result === 'Accepted').length;

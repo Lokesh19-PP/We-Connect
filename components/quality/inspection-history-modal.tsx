@@ -43,7 +43,7 @@ export function InspectionHistoryModal({ row, isOpen, onClose }: InspectionHisto
                 </svg>
               </div>
               <h3 className="text-lg font-medium text-slate-900">No inspections yet</h3>
-              <p className="text-slate-500 text-sm mt-1">This job hasn't had any recorded inspections.</p>
+              <p className="text-slate-500 text-sm mt-1">This job hasn&apos;t had any recorded inspections.</p>
             </div>
           ) : (
             <div className="space-y-6">

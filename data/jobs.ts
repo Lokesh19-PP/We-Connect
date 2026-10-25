@@ -68,7 +68,7 @@ export interface AuditEvent {
 let initialised = false;
 let jobsStore: EnrichedJob[] = [];
 let acknowledgementsStore: DrawingAcknowledgement[] = [];
-let auditHistoryStore: Record<string, AuditEvent[]> = {};
+const auditHistoryStore: Record<string, AuditEvent[]> = {};
 
 // Project mapping helper for realistic sample data
 const PROJECT_MAP: Record<string, string> = {

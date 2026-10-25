@@ -42,26 +42,22 @@ export function NewJobDialog({
   const [quantity, setQuantity] = useState('25');
   const [workshopId, setWorkshopId] = useState(workshops[0]?.id || '');
   const [material, setMaterial] = useState('Mild Steel IS 2062');
-  const [dueDate, setDueDate] = useState('');
-  const [neededByDate, setNeededByDate] = useState('');
+  const [dueDate, setDueDate] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 14);
+    return d.toISOString().split('T')[0];
+  });
+  const [neededByDate, setNeededByDate] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 17);
+    return d.toISOString().split('T')[0];
+  });
   const [project, setProject] = useState('Boiler B-200');
   const [notes, setNotes] = useState('');
 
   // Validation errors
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Set default dates on mount
-  useEffect(() => {
-    const today = new Date();
-    const defaultDue = new Date();
-    defaultDue.setDate(today.getDate() + 14);
-    const defaultNeeded = new Date();
-    defaultNeeded.setDate(today.getDate() + 17);
-
-    setDueDate(defaultDue.toISOString().split('T')[0]);
-    setNeededByDate(defaultNeeded.toISOString().split('T')[0]);
-  }, []);
 
   // Sync with ?new=1 query param
   useEffect(() => {
