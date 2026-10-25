@@ -1,18 +1,19 @@
 'use client';
 
 // ──────────────────────────────────────────────
-// We Connect – Header / Top Bar
-// Search, Filters, NotificationBell, DemoGuidePanel, Role Switcher
+// VendorFlow – Header / Top Bar
+// Search, Filters, NotificationBell, DemoGuidePanel, Real Role / View-As & Logout
 // ──────────────────────────────────────────────
 import { useState } from 'react';
-import { useRole } from '@/lib/role-context';
+import { useAuth } from '@/lib/auth-context';
 import { NotificationBell } from '@/components/notifications';
 import { DemoGuidePanel } from './demo-guide-panel';
-import { Search, UserCheck } from 'lucide-react';
+import { Search, UserCheck, LogOut, Shield } from 'lucide-react';
 import type { Role } from '@/types';
 
 export function Header() {
-  const { role, setRole, allRoles } = useRole();
+  const { role, realRole, isAdmin, viewAsRole, setViewAsRole, signOut, allRoles, profile } =
+    useAuth();
 
   // Filters state (demo interactive)
   const [selectedProject, setSelectedProject] = useState('All Projects');
@@ -90,34 +91,58 @@ export function Header() {
         </div>
       </div>
 
-      {/* Right Controls: Demo Guide Panel, Notification Bell & Demo Role Switcher */}
+      {/* Right Controls: Demo Guide, Notifications, Role Display / Switcher, Logout */}
       <div className="flex items-center space-x-3">
         {/* Interactive 7-Step Demo Guide */}
         <DemoGuidePanel />
 
-        {/* Exported Notification Bell Component */}
+        {/* Notification Bell */}
         <NotificationBell />
 
-        {/* Demo Role Switcher Dropdown */}
-        <div className="flex items-center space-x-2 bg-gray-50 border border-gray-200 rounded-lg p-1 px-2.5">
-          <UserCheck className="w-4 h-4 text-[#F97316]" />
-          <div className="flex flex-col">
-            <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
-              Demo Role
-            </span>
-            <select
-              value={role}
-              onChange={(e) => setRole(e.target.value as Role)}
-              className="bg-transparent text-xs font-bold text-gray-900 focus:outline-none cursor-pointer"
-            >
-              {allRoles.map((r) => (
-                <option key={r} value={r}>
-                  {r}
-                </option>
-              ))}
-            </select>
+        {/* Role Display or Admin 'View As' Switcher */}
+        {isAdmin ? (
+          <div className="flex items-center space-x-2 bg-amber-50 border border-amber-200 rounded-lg p-1 px-2.5">
+            <Shield className="w-4 h-4 text-amber-600" />
+            <div className="flex flex-col">
+              <span className="text-[10px] font-semibold text-amber-700 uppercase tracking-wider">
+                Admin (View As)
+              </span>
+              <select
+                value={viewAsRole || 'Admin'}
+                onChange={(e) => {
+                  const val = e.target.value as Role;
+                  setViewAsRole(val === 'Admin' ? null : val);
+                }}
+                className="bg-transparent text-xs font-bold text-gray-900 focus:outline-none cursor-pointer"
+              >
+                {allRoles.map((r) => (
+                  <option key={r} value={r}>
+                    {r} {r === 'Admin' ? '(Real Role)' : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="flex items-center space-x-2 bg-gray-50 border border-gray-200 rounded-lg p-1.5 px-3">
+            <UserCheck className="w-4 h-4 text-[#F97316]" />
+            <div className="flex flex-col">
+              <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
+                {profile?.name || 'Logged In'}
+              </span>
+              <span className="text-xs font-bold text-gray-900">{role}</span>
+            </div>
+          </div>
+        )}
+
+        {/* Logout Button */}
+        <button
+          onClick={() => signOut()}
+          title="Sign out of VendorFlow"
+          className="p-2 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50 border border-transparent hover:border-red-200 transition-all cursor-pointer"
+        >
+          <LogOut className="w-4 h-4" />
+        </button>
       </div>
     </header>
   );

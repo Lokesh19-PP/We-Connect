@@ -1,66 +1,34 @@
 'use client';
 
 // ──────────────────────────────────────────────
-// We Connect – Demo Role Switcher Context
-// Lets the team view the app as any of the 10 roles.
-// Default role: Procurement (§4).
+// VendorFlow – Unified Role & Auth Context Bridge
+// Bridges authenticated Supabase user role with role-aware UI.
 // ──────────────────────────────────────────────
-import {
-  createContext,
-  useContext,
-  useState,
-  useCallback,
-  type ReactNode,
-} from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { createContext, useContext, type ReactNode } from 'react';
+import { AuthProvider, useAuth, ALL_ROLES } from '@/lib/auth-context';
 import type { Role } from '@/types';
 
-/** All 10 roles in display order */
-export const ALL_ROLES: Role[] = [
-  'Procurement',
-  'Production',
-  'Engineering',
-  'Stores',
-  'Quality',
-  'Finance',
-  'Management',
-  'Workshop Owner',
-  'Workshop Staff',
-  'Admin',
-];
+export { ALL_ROLES };
 
 interface RoleContextValue {
-  /** The currently active role */
   role: Role;
-  /** Switch to a different role */
   setRole: (role: Role) => void;
-  /** All available roles */
   allRoles: Role[];
-  /** Whether the current role is a workshop role (phone-first UI) */
   isWorkshopRole: boolean;
+  isAdmin: boolean;
+  signOut: () => Promise<void>;
 }
 
 const RoleContext = createContext<RoleContextValue | undefined>(undefined);
 
-export function RoleProvider({ children }: { children: ReactNode }) {
-  const [role, setRoleState] = useState<Role>('Procurement');
-  const router = useRouter();
-  const pathname = usePathname();
+function RoleBridgeConsumer({ children }: { children: ReactNode }) {
+  const { role, setViewAsRole, isAdmin, isWorkshopRole, signOut } = useAuth();
 
-  const setRole = useCallback(
-    (newRole: Role) => {
-      setRoleState(newRole);
-      const isNewWorkshop = newRole === 'Workshop Owner' || newRole === 'Workshop Staff';
-      if (isNewWorkshop && !pathname.startsWith('/workshop')) {
-        router.push('/workshop');
-      } else if (!isNewWorkshop && pathname.startsWith('/workshop')) {
-        router.push('/');
-      }
-    },
-    [router, pathname]
-  );
-
-  const isWorkshopRole = role === 'Workshop Owner' || role === 'Workshop Staff';
+  const setRole = (newRole: Role) => {
+    if (isAdmin) {
+      setViewAsRole(newRole);
+    }
+  };
 
   return (
     <RoleContext.Provider
@@ -69,6 +37,8 @@ export function RoleProvider({ children }: { children: ReactNode }) {
         setRole,
         allRoles: ALL_ROLES,
         isWorkshopRole,
+        isAdmin,
+        signOut,
       }}
     >
       {children}
@@ -76,10 +46,14 @@ export function RoleProvider({ children }: { children: ReactNode }) {
   );
 }
 
-/**
- * Hook to access the current role and role switcher.
- * Must be used within a <RoleProvider>.
- */
+export function RoleProvider({ children }: { children: ReactNode }) {
+  return (
+    <AuthProvider>
+      <RoleBridgeConsumer>{children}</RoleBridgeConsumer>
+    </AuthProvider>
+  );
+}
+
 export function useRole(): RoleContextValue {
   const context = useContext(RoleContext);
   if (!context) {
