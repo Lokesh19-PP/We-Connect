@@ -74,6 +74,7 @@ export default function PaymentsPage() {
   const [search, setSearch] = useState('');
   const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
   const [reviewInvoice, setReviewInvoice] = useState<InvoicePayment | null>(null);
+  const [nowTimestamp] = useState(() => Date.now());
 
   const jobs = useMemo(() => getJobs(), []);
 
@@ -99,7 +100,7 @@ export default function PaymentsPage() {
         (a, b) => new Date(a.deliveredDate).getTime() - new Date(b.deliveredDate).getTime()
       )[0];
       const daysSinceDelivery = earliestDelivery
-        ? Math.floor((Date.now() - new Date(earliestDelivery.deliveredDate).getTime()) / 86_400_000)
+        ? Math.floor((nowTimestamp - new Date(earliestDelivery.deliveredDate).getTime()) / 86_400_000)
         : null;
 
       return {
@@ -114,7 +115,7 @@ export default function PaymentsPage() {
         daysSinceDelivery,
       } satisfies PaymentRow;
     }).filter(Boolean) as PaymentRow[];
-  }, [payments, jobs]);
+  }, [payments, jobs, nowTimestamp]);
 
   // ── Summary card numbers ───────────────────────
   // Received = invoices with Paid status (matches sample §8: 12)
@@ -167,8 +168,26 @@ export default function PaymentsPage() {
 
   // ── Mutation handlers ──────────────────────────
   function handleApprove(id: string) {
+    const target = payments.find((p) => p.id === id);
+    const linkedJob = jobs.find((j) => j.id === target?.jobId);
     approveInvoice(id);
     setPayments(getPayments());
+
+    if (typeof window !== 'undefined') {
+      fetch('/api/email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          event: 'payment_ready',
+          data: {
+            invoiceNumber: target?.invoiceNumber || 'INV-001',
+            amount: target?.amount || 0,
+            workshopName: linkedJob?.workshopName || 'Workshop',
+            jobId: target?.jobId || '',
+          },
+        }),
+      }).catch((e) => console.warn('[Email Dispatch Notice]:', e));
+    }
   }
 
   function handleSendBack(id: string, _reason: string) {
@@ -178,8 +197,26 @@ export default function PaymentsPage() {
   }
 
   function handleMarkPaid(id: string, paidDate: string, paidAmount: number, reference: string) {
+    const target = payments.find((p) => p.id === id);
+    const linkedJob = jobs.find((j) => j.id === target?.jobId);
     markAsPaid(id, paidDate, paidAmount, reference);
     setPayments(getPayments());
+
+    if (typeof window !== 'undefined') {
+      fetch('/api/email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          event: 'payment_paid',
+          data: {
+            invoiceNumber: target?.invoiceNumber || 'INV-001',
+            amount: paidAmount,
+            workshopName: linkedJob?.workshopName || 'Workshop',
+            paymentReference: reference,
+          },
+        }),
+      }).catch((e) => console.warn('[Email Dispatch Notice]:', e));
+    }
   }
 
   function toggleRow(id: string) {

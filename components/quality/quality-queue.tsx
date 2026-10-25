@@ -18,12 +18,32 @@ export function QualityQueue() {
   const filteredRows = queue.filter(row => row.statusTab === activeTab);
 
   const handleReject = (rowId: string, remarks: string, reinspectionDate: string) => {
+    const target = queue.find(r => r.id === rowId);
+
     setQueue(prev => prev.map(r => r.id === rowId ? {
       ...r, 
       statusTab: 'Rework',
       risk: 'Reinspection due'
     } : r));
     setSelectedRow(null);
+
+    // Dispatch email notification via server Resend service
+    if (typeof window !== 'undefined') {
+      fetch('/api/email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          event: 'inspection_rejected',
+          data: {
+            jobId: target?.jobId || rowId,
+            partName: target?.partDisplayName || 'Fabricated Part',
+            workshopName: target?.workshopName || 'Workshop',
+            remarks: remarks || 'Dimensional non-conformance',
+            reinspectionDate,
+          },
+        }),
+      }).catch((e) => console.warn('[Email Dispatch Notice]:', e));
+    }
   };
 
   const handleAccept = (rowId: string, qtyAccepted: number) => {

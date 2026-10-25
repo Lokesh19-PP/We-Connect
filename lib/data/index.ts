@@ -319,6 +319,23 @@ export async function approveDrawingRevision(params: {
       read: false,
     });
 
+    // 5. Dispatch email notification via server Resend service
+    if (typeof window !== 'undefined') {
+      fetch('/api/email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          event: 'drawing_approved',
+          data: {
+            partName,
+            partCode,
+            revision: approvedRow.revision,
+            changeNote: approvedRow.change_note,
+          },
+        }),
+      }).catch((e) => console.warn('[Email Dispatch Notice]:', e));
+    }
+
     return { success: true, notifiedCount: uniqueWorkshops.size, error: null };
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : 'Failed to approve drawing';
@@ -344,6 +361,21 @@ export async function sendDrawingAcknowledgementReminder(params: {
       link: '/drawings',
       read: false,
     });
+
+    // Dispatch email notification via server Resend service
+    if (typeof window !== 'undefined') {
+      fetch('/api/email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          event: 'revision_not_acknowledged',
+          data: {
+            workshopName: params.workshopName,
+            revision: params.revision,
+          },
+        }),
+      }).catch((e) => console.warn('[Email Dispatch Notice]:', e));
+    }
 
     return { success: true, error: null };
   } catch (err: unknown) {
