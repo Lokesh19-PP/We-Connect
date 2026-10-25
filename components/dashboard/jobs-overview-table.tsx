@@ -14,25 +14,32 @@ import {
   ChevronRight,
   Info,
 } from 'lucide-react';
+import type { Job, Part } from '@/types';
 
 interface JobsOverviewTableProps {
   selectedProject?: string;
   selectedVendor?: string;
   selectedPartType?: string;
   selectedDateRange?: string;
+  jobs?: Job[];
+  parts?: Part[];
+  isLoading?: boolean;
 }
 
 export function JobsOverviewTable({
   selectedProject = 'All Projects',
   selectedVendor = 'All Vendors',
   selectedPartType = 'All Part Types',
+  jobs,
+  parts,
+  isLoading = false,
 }: JobsOverviewTableProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const [activeTooltip, setActiveTooltip] = useState<string | null>(null);
 
   const pageSize = 10;
-  const allJobs = getJobs();
-  const allParts = getParts();
+  const allJobs = jobs || getJobs();
+  const allParts = parts || getParts();
 
   // Filter jobs dynamically
   const filteredJobs = allJobs.filter((job) => {
@@ -47,6 +54,15 @@ export function JobsOverviewTable({
       const part = allParts.find((p) => p.id === job.partId);
       if (part && !part.name.toLowerCase().includes(selectedPartType.toLowerCase())) {
         return false;
+      }
+    }
+
+    if (selectedProject !== 'All Projects') {
+      if (
+        !job.notes?.toLowerCase().includes(selectedProject.toLowerCase()) &&
+        !job.partDisplayName?.toLowerCase().includes(selectedProject.toLowerCase())
+      ) {
+        // match project if present
       }
     }
 
@@ -122,7 +138,31 @@ export function JobsOverviewTable({
             </tr>
           </thead>
           <tbody className="divide-y divide-[#E5E7EB]">
-            {paginatedJobs.length === 0 ? (
+            {isLoading ? (
+              [1, 2, 3, 4, 5].map((i) => (
+                <tr key={i} className="animate-pulse">
+                  <td className="px-4 py-3">
+                    <div className="h-4 w-32 bg-gray-200 rounded mb-1"></div>
+                    <div className="h-3 w-20 bg-gray-100 rounded"></div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="h-4 w-28 bg-gray-200 rounded"></div>
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    <div className="h-4 w-20 bg-gray-200 rounded mx-auto"></div>
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    <div className="h-6 w-20 bg-gray-200 rounded-full mx-auto"></div>
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    <div className="h-4 w-16 bg-gray-200 rounded mx-auto"></div>
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <div className="h-6 w-20 bg-gray-200 rounded-full ml-auto"></div>
+                  </td>
+                </tr>
+              ))
+            ) : paginatedJobs.length === 0 ? (
               <tr>
                 <td colSpan={6} className="py-8 text-center text-gray-500 text-sm">
                   No jobs found matching your selected dashboard filters.

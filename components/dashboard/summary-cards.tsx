@@ -22,24 +22,30 @@ import {
   Info,
 } from 'lucide-react';
 
+import type { DashboardData } from '@/lib/data';
+
 interface SummaryCardsProps {
   selectedProject?: string;
   selectedVendor?: string;
   selectedPartType?: string;
   selectedDateRange?: string;
+  data?: DashboardData | null;
+  isLoading?: boolean;
 }
 
 export function SummaryCards({
   selectedProject = 'All Projects',
   selectedVendor = 'All Vendors',
   selectedPartType = 'All Part Types',
+  data,
+  isLoading = false,
 }: SummaryCardsProps) {
   const [activeTooltip, setActiveTooltip] = useState<string | null>(null);
 
-  const allJobs = getJobs();
-  const allParts = getParts();
-  const acks = getAcknowledgements();
-  const payments = getInvoicePayments();
+  const allJobs = data ? data.jobs : getJobs();
+  const allParts = data ? data.parts : getParts();
+  const acks = data ? data.acknowledgements : getAcknowledgements();
+  const payments = data ? data.invoices : getInvoicePayments();
 
   // Filter jobs dynamically
   const filteredJobs = allJobs.filter((job) => {
@@ -59,8 +65,8 @@ export function SummaryCards({
 
     if (selectedProject !== 'All Projects') {
       if (
-        !job.notes.toLowerCase().includes(selectedProject.toLowerCase()) &&
-        !job.partDisplayName.toLowerCase().includes(selectedProject.toLowerCase())
+        !job.notes?.toLowerCase().includes(selectedProject.toLowerCase()) &&
+        !job.partDisplayName?.toLowerCase().includes(selectedProject.toLowerCase())
       ) {
         // match project if present
       }
@@ -151,6 +157,32 @@ export function SummaryCards({
       topAccent: 'border-t-4 border-t-emerald-500',
     },
   ];
+
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        {[
+          'border-t-blue-500',
+          'border-t-amber-500',
+          'border-t-red-500',
+          'border-t-indigo-500',
+          'border-t-emerald-500',
+        ].map((accent, idx) => (
+          <div
+            key={idx}
+            className={`p-4 rounded-[10px] border border-gray-200 bg-white shadow-xs border-t-4 ${accent} animate-pulse space-y-3`}
+          >
+            <div className="flex justify-between items-center">
+              <div className="h-3.5 w-24 bg-gray-200 rounded"></div>
+              <div className="h-7 w-7 bg-gray-100 rounded-lg"></div>
+            </div>
+            <div className="h-8 w-12 bg-gray-200 rounded mt-2"></div>
+            <div className="h-3 w-28 bg-gray-100 rounded"></div>
+          </div>
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">

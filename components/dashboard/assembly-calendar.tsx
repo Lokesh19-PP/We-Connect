@@ -5,7 +5,6 @@
 // Recharts Bar Chart showing needed, ready & shortfall
 // Ready in navy (#0F1B33), shortfall in red (#EF4444)
 // ──────────────────────────────────────────────
-import { useState, useEffect } from 'react';
 import { getAssemblySlots } from '@/data/sample';
 import { getAssemblyShortfall } from '@/lib/rules';
 import {
@@ -19,17 +18,17 @@ import {
   CartesianGrid,
 } from 'recharts';
 import { Calendar, AlertCircle } from 'lucide-react';
+import type { AssemblySlot } from '@/types';
 
-export function AssemblyCalendar() {
-  const [isLoading, setIsLoading] = useState(true);
+interface AssemblyCalendarProps {
+  slots?: Array<AssemblySlot & { shortfall: number }>;
+  isLoading?: boolean;
+}
 
-  useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 200);
-    return () => clearTimeout(timer);
-  }, []);
+export function AssemblyCalendar({ slots, isLoading = false }: AssemblyCalendarProps) {
+  const rawSlots = slots || getAssemblyShortfall(getAssemblySlots());
 
-  const slots = getAssemblySlots();
-  const calendarData = getAssemblyShortfall(slots).map((slot) => ({
+  const calendarData = rawSlots.map((slot) => ({
     ...slot,
     label: `${slot.ready} / ${slot.needed}`,
     formattedDate: new Date(slot.date).toLocaleDateString('en-GB', {
@@ -38,7 +37,7 @@ export function AssemblyCalendar() {
     }),
   }));
 
-  const totalShortfall = calendarData.reduce((acc, c) => acc + c.shortfall, 0);
+  const totalShortfall = calendarData.reduce((acc, c) => acc + (c.shortfall || 0), 0);
 
   return (
     <div className="bg-white border border-[#E5E7EB] rounded-[10px] shadow-xs p-5 space-y-4">

@@ -14,35 +14,40 @@ import {
   CreditCard,
   CheckCircle2,
   X,
+  Loader2,
 } from 'lucide-react';
+import { sendDrawingAcknowledgementReminder, type ActionItem } from '@/lib/data';
 
-interface ActionItem {
-  id: string;
-  title: string;
-  subtitle: string;
-  actionText: string;
-  actionHref?: string;
-  type: 'remind' | 'schedule' | 'inspection' | 'review';
-  urgent?: boolean;
+interface NeedsActionListProps {
+  items?: ActionItem[];
+  isLoading?: boolean;
+  onRefresh?: () => void;
 }
 
-export function NeedsActionList() {
+export function NeedsActionList({
+  items,
+  isLoading = false,
+  onRefresh,
+}: NeedsActionListProps) {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [confirmingRemindId, setConfirmingRemindId] = useState<string | null>(null);
+  const [confirmingItem, setConfirmingItem] = useState<ActionItem | null>(null);
+  const [isSending, setIsSending] = useState(false);
 
-  const actionItems: ActionItem[] = [
+  const defaultActionItems: ActionItem[] = [
     {
       id: 'act-1',
       title: 'Drawing Rev B sent to Patil Steel — 2 days waiting for ack',
-      subtitle: 'Workshop C has not acknowledged latest approved revision',
+      subtitle: 'Patil Steel has not acknowledged latest approved revision',
       actionText: 'Remind vendor',
       type: 'remind',
       urgent: true,
+      workshopName: 'Patil Steel',
+      revision: 'Rev B',
     },
     {
       id: 'act-2',
-      title: 'Bracket B-204 assembly shortfall predicted on 14 Oct',
-      subtitle: 'Assembly slot requires 15 units, only 10 ready',
+      title: 'Bracket B-204 assembly shortfall predicted on 15 Oct',
+      subtitle: 'Assembly slot requires 40 units, only 28 ready',
       actionText: 'Review schedule',
       actionHref: '/jobs',
       type: 'schedule',
@@ -50,32 +55,71 @@ export function NeedsActionList() {
     {
       id: 'act-3',
       title: 'Gusset G-045 delivered by Kulkarni Engg awaiting inspection',
-      subtitle: 'Goods receipt recorded on 06 Oct — GRN #GRN-104',
+      subtitle: 'Goods receipt recorded — inspection pending',
       actionText: 'Schedule inspection',
       actionHref: '/quality',
       type: 'inspection',
     },
     {
       id: 'act-4',
-      title: 'Invoice #INV-204 from Shree Fabricators awaiting finance approval',
-      subtitle: 'Amount ₹1,50,000 — Quality inspection passed',
+      title: 'Invoice #INV-OE-2026-030 from Om Engg Works awaiting finance approval',
+      subtitle: 'Amount ₹1,45,000 — Quality inspection passed',
       actionText: 'Review',
       actionHref: '/payments',
       type: 'review',
     },
   ];
 
+  const actionItems = items || defaultActionItems;
+
   const handleActionClick = (item: ActionItem) => {
     if (item.type === 'remind') {
-      setConfirmingRemindId(item.id);
+      setConfirmingItem(item);
     }
   };
 
-  const handleConfirmRemind = () => {
-    setConfirmingRemindId(null);
-    setToastMessage('Reminder sent to Workshop C (Patil Steel)');
+  const handleConfirmRemind = async () => {
+    if (!confirmingItem) return;
+    setIsSending(true);
+
+    await sendDrawingAcknowledgementReminder({
+      workshopName: confirmingItem.workshopName || 'Patil Steel',
+      revision: confirmingItem.revision || 'Rev B',
+      jobId: confirmingItem.jobId,
+    });
+
+    setIsSending(false);
+    const wsName = confirmingItem.workshopName || 'vendor';
+    setConfirmingItem(null);
+    setToastMessage(`Reminder notification sent to ${wsName}`);
+    if (onRefresh) onRefresh();
     setTimeout(() => setToastMessage(null), 4000);
   };
+
+  if (isLoading) {
+    return (
+      <div className="bg-white border border-slate-200 rounded-xl shadow-2xs p-5 space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="h-4 w-36 bg-gray-200 rounded animate-pulse"></div>
+          <div className="h-3 w-20 bg-gray-100 rounded animate-pulse"></div>
+        </div>
+        <div className="space-y-2.5">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="p-3.5 rounded-xl border border-slate-100 bg-slate-50/50 flex items-center justify-between animate-pulse">
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 rounded-lg bg-gray-200"></div>
+                <div className="space-y-1.5">
+                  <div className="h-3.5 w-60 bg-gray-200 rounded"></div>
+                  <div className="h-3 w-40 bg-gray-100 rounded"></div>
+                </div>
+              </div>
+              <div className="h-7 w-24 bg-gray-200 rounded-lg"></div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white border border-slate-200 rounded-xl shadow-2xs p-5 space-y-4">
@@ -84,7 +128,7 @@ export function NeedsActionList() {
           <AlertTriangle className="w-4 h-4 text-amber-500" />
           <span>Needs Action Today</span>
           <span className="px-2 py-0.5 text-[10px] font-extrabold bg-amber-100 text-amber-800 rounded-full">
-            4 Actionable
+            {actionItems.length} Actionable
           </span>
         </h2>
         <span className="text-[11px] text-slate-400 font-medium">Updated just now</span>
@@ -92,53 +136,59 @@ export function NeedsActionList() {
 
       {/* Action Items List */}
       <div className="space-y-2.5">
-        {actionItems.map((item) => (
-          <div
-            key={item.id}
-            className={`p-3.5 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-colors ${
-              item.urgent
-                ? 'bg-amber-50/50 border-amber-200/80 hover:bg-amber-50'
-                : 'bg-slate-50/60 border-slate-200/80 hover:bg-slate-50'
-            }`}
-          >
-            <div className="flex items-start space-x-3">
-              <div className="p-2 rounded-lg bg-white border border-slate-200 shrink-0 text-slate-700 mt-0.5">
-                {item.type === 'remind' && <Bell className="w-4 h-4 text-amber-600" />}
-                {item.type === 'schedule' && <Calendar className="w-4 h-4 text-blue-600" />}
-                {item.type === 'inspection' && <ShieldCheck className="w-4 h-4 text-emerald-600" />}
-                {item.type === 'review' && <CreditCard className="w-4 h-4 text-indigo-600" />}
-              </div>
-              <div>
-                <p className="font-bold text-slate-900 text-xs">{item.title}</p>
-                <p className="text-[11px] text-slate-500 mt-0.5">{item.subtitle}</p>
-              </div>
-            </div>
-
-            {/* Action Button */}
-            <div className="shrink-0">
-              {item.actionHref ? (
-                <Link
-                  href={item.actionHref}
-                  className="inline-flex items-center px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-800 border border-slate-300 font-bold text-xs rounded-lg transition-colors shadow-2xs"
-                >
-                  {item.actionText}
-                </Link>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => handleActionClick(item)}
-                  className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-lg transition-colors shadow-2xs"
-                >
-                  {item.actionText}
-                </button>
-              )}
-            </div>
+        {actionItems.length === 0 ? (
+          <div className="py-8 text-center text-slate-400 text-xs">
+            All clear! No urgent items need your attention right now.
           </div>
-        ))}
+        ) : (
+          actionItems.map((item) => (
+            <div
+              key={item.id}
+              className={`p-3.5 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-colors ${
+                item.urgent
+                  ? 'bg-amber-50/50 border-amber-200/80 hover:bg-amber-50'
+                  : 'bg-slate-50/60 border-slate-200/80 hover:bg-slate-50'
+              }`}
+            >
+              <div className="flex items-start space-x-3">
+                <div className="p-2 rounded-lg bg-white border border-slate-200 shrink-0 text-slate-700 mt-0.5">
+                  {item.type === 'remind' && <Bell className="w-4 h-4 text-amber-600" />}
+                  {item.type === 'schedule' && <Calendar className="w-4 h-4 text-blue-600" />}
+                  {item.type === 'inspection' && <ShieldCheck className="w-4 h-4 text-emerald-600" />}
+                  {item.type === 'review' && <CreditCard className="w-4 h-4 text-indigo-600" />}
+                </div>
+                <div>
+                  <p className="font-bold text-slate-900 text-xs">{item.title}</p>
+                  <p className="text-[11px] text-slate-500 mt-0.5">{item.subtitle}</p>
+                </div>
+              </div>
+
+              {/* Action Button */}
+              <div className="shrink-0">
+                {item.actionHref ? (
+                  <Link
+                    href={item.actionHref}
+                    className="inline-flex items-center px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-800 border border-slate-300 font-bold text-xs rounded-lg transition-colors shadow-2xs"
+                  >
+                    {item.actionText}
+                  </Link>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => handleActionClick(item)}
+                    className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-lg transition-colors shadow-2xs"
+                  >
+                    {item.actionText}
+                  </button>
+                )}
+              </div>
+            </div>
+          ))
+        )}
       </div>
 
       {/* Confirmation Modal for Remind Vendor */}
-      {confirmingRemindId && (
+      {confirmingItem && (
         <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl p-6 max-w-sm w-full space-y-4 border border-slate-200 shadow-2xl animate-in zoom-in-95 duration-150">
             <div className="flex items-center space-x-3 text-amber-600">
@@ -146,22 +196,25 @@ export function NeedsActionList() {
               <h3 className="font-bold text-slate-900 text-sm">Send Vendor Reminder?</h3>
             </div>
             <p className="text-xs text-slate-600 leading-relaxed">
-              This will send an immediate alert notification to Workshop C (Patil Steel) to acknowledge approved drawing revision Rev B.
+              This will send an immediate alert notification to {confirmingItem.workshopName || 'the workshop'} to acknowledge approved drawing revision {confirmingItem.revision || 'revision'}.
             </p>
             <div className="flex justify-end space-x-2 pt-2">
               <button
                 type="button"
-                onClick={() => setConfirmingRemindId(null)}
-                className="px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg"
+                disabled={isSending}
+                onClick={() => setConfirmingItem(null)}
+                className="px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg disabled:opacity-50"
               >
                 Cancel
               </button>
               <button
                 type="button"
+                disabled={isSending}
                 onClick={handleConfirmRemind}
-                className="px-4 py-1.5 text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white rounded-lg shadow-2xs"
+                className="px-4 py-1.5 text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white rounded-lg shadow-2xs flex items-center space-x-1.5 disabled:opacity-50"
               >
-                Send Reminder
+                {isSending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                <span>{isSending ? 'Sending...' : 'Send Reminder'}</span>
               </button>
             </div>
           </div>

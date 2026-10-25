@@ -514,3 +514,5 @@ export const getInvoicePaymentsForJob: (jobId: string) => InvoicePayment[] =
   sample.getInvoicePaymentsForJob;
 export const getAssemblySlots: () => AssemblySlot[] = sample.getAssemblySlots;
 export const getNotifications: () => AppNotification[] = sample.getNotifications;
+
+export { fetchDashboardData, type DashboardData, type FetchDashboardResult, type ActionItem } from './dashboard';
