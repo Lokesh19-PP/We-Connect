@@ -35,10 +35,17 @@ interface DemoStep {
 }
 
 export function DemoGuidePanel() {
+  const isSample = process.env.NEXT_PUBLIC_USE_SAMPLE === 'true';
+
   const [isOpen, setIsOpen] = useState(false);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
+  const [, setToastIdCounter] = useState(0);
   const { setRole } = useRole();
   const router = useRouter();
+
+  if (!isSample) {
+    return null;
+  }
 
   const demoSteps: DemoStep[] = [
     {
@@ -114,13 +121,17 @@ export function DemoGuidePanel() {
     title: string,
     message?: string
   ) => {
-    const newToast: ToastMessage = {
-      id: Date.now().toString(),
-      type,
-      title,
-      message,
-    };
-    setToasts((prev) => [...prev, newToast]);
+    setToastIdCounter((prevId) => {
+      const nextId = prevId + 1;
+      const newToast: ToastMessage = {
+        id: `toast-${nextId}`,
+        type,
+        title,
+        message,
+      };
+      setToasts((prev) => [...prev, newToast]);
+      return nextId;
+    });
   };
 
   const handleDismissToast = (id: string) => {

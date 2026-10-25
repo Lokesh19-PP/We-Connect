@@ -207,8 +207,14 @@ export function JobTimeline({ job, onRefresh, showToast }: JobTimelineProps) {
             </p>
             <p className="leading-relaxed">
               {rule2Result.reason}. Under subcontracting governance, fabrication work cannot commence
-              until the workshop acknowledges the approved revision. Use the{' '}
-              <strong>&quot;Simulate Workshop Ack (Demo)&quot;</strong> button above to unblock.
+              until the workshop acknowledges the approved revision.
+              {process.env.NEXT_PUBLIC_USE_SAMPLE === 'true' ? (
+                <>
+                  {' '}Use the <strong>&quot;Simulate Workshop Ack (Demo)&quot;</strong> button above to unblock.
+                </>
+              ) : (
+                ' The workshop must acknowledge the drawing via their mobile portal to unblock.'
+              )}
             </p>
           </div>
         </div>

@@ -196,16 +196,18 @@ export function DrawingAckCard({
               </button>
             )}
 
-            {/* Demo quick toggle button to test Rule 2 effortlessly */}
-            <button
-              type="button"
-              onClick={handleSimulateAcknowledgement}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-medium text-xs transition-colors cursor-pointer"
-              title="Demo button to simulate workshop staff acknowledging the drawing on their mobile view"
-            >
-              <UserCheck className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Simulate Workshop Ack (Demo)</span>
-            </button>
+            {/* Demo quick toggle button to test Rule 2 effortlessly (Sample Mode Only) */}
+            {process.env.NEXT_PUBLIC_USE_SAMPLE === 'true' && (
+              <button
+                type="button"
+                onClick={handleSimulateAcknowledgement}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-medium text-xs transition-colors cursor-pointer"
+                title="Demo button to simulate workshop staff acknowledging the drawing on their mobile view"
+              >
+                <UserCheck className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Simulate Workshop Ack (Demo)</span>
+              </button>
+            )}
           </div>
         </div>
       )}

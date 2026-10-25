@@ -93,8 +93,8 @@ export function Header() {
 
       {/* Right Controls: Demo Guide, Notifications, Role Display / Switcher, Logout */}
       <div className="flex items-center space-x-3">
-        {/* Interactive 7-Step Demo Guide */}
-        <DemoGuidePanel />
+        {/* Interactive 7-Step Demo Guide (Sample Prototype Mode Only) */}
+        {process.env.NEXT_PUBLIC_USE_SAMPLE === 'true' && <DemoGuidePanel />}
 
         {/* Notification Bell */}
         <NotificationBell />
