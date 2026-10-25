@@ -22,13 +22,13 @@ export function RevisionHistoryPanel({ part, drawings, onClose }: RevisionHistor
         {part.displayName}
       </div>
       <div className="flex-1 overflow-y-auto p-4 space-y-6">
-        {drawings.sort((a,b) => b.uploadedAt.localeCompare(a.uploadedAt)).map((d, i) => (
+        {drawings.sort((a,b) => b.uploadedAt.localeCompare(a.uploadedAt)).map((d) => (
            <div key={d.id} className="relative pl-6 border-l-2 border-slate-200 pb-2 last:border-0 last:pb-0">
              <div className="absolute w-3 h-3 bg-slate-300 rounded-full -left-[7px] top-1 border-2 border-white"></div>
              <div className="font-medium text-sm text-slate-900">{d.revision} <span className="text-slate-500 font-normal ml-2">{d.uploadedAt}</span></div>
              <div className="text-xs text-slate-600 mt-1">Uploaded by {d.uploadedBy}</div>
              {d.approved && <div className="text-xs text-green-600 mt-1 font-medium">Approved by {d.approvedBy || d.uploadedBy}</div>}
-             {d.changeNote && <div className="text-xs text-slate-700 bg-slate-50 p-2 rounded mt-2 border border-slate-200 italic">"{d.changeNote}"</div>}
+             {d.changeNote && <div className="text-xs text-slate-700 bg-slate-50 p-2 rounded mt-2 border border-slate-200 italic">&ldquo;{d.changeNote}&rdquo;</div>}
            </div>
         ))}
       </div>

@@ -3,9 +3,9 @@ import { Part, Drawing, DrawingAcknowledgement, Job } from '@/types';
 import { canApproveDrawing } from '@/lib/rules';
 
 // Mutable store for the session
-let parts: Part[] = [...getSampleParts()];
+const parts: Part[] = [...getSampleParts()];
 let drawings: Drawing[] = [...getSampleDrawings()];
-let acknowledgements: DrawingAcknowledgement[] = [...getSampleAcks()];
+const acknowledgements: DrawingAcknowledgement[] = [...getSampleAcks()];
 
 export function getParts(): Part[] {
   return parts;

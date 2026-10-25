@@ -1,5 +1,6 @@
 import { createClient as createBrowserSupabase } from '@/lib/supabase/client';
 import * as sample from '@/data/sample';
+import { addDrawing as sampleAddDrawing, approveDrawing as sampleApproveDrawing } from '@/data/drawings';
 import {
   mapDbWorkshopToWorkshop,
   mapDbPartToPart,
@@ -166,6 +167,188 @@ export async function fetchDrawings(partId?: string): Promise<FetchResult<Drawin
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : 'Failed to fetch drawings';
     return { data: null, error: msg };
+  }
+}
+
+/**
+ * Fetch drawing acknowledgements with optional jobId filter
+ */
+export async function fetchAcknowledgements(jobId?: string): Promise<FetchResult<DrawingAcknowledgement[]>> {
+  if (isSampleMode()) {
+    return {
+      data: jobId ? sample.getAcknowledgementsForJob(jobId) : sample.getAcknowledgements(),
+      error: null,
+    };
+  }
+
+  try {
+    const supabase = createBrowserSupabase();
+    let query = supabase
+      .from('drawing_acknowledgements')
+      .select('*, jobs(workshop_id)');
+    if (jobId) query = query.eq('job_id', jobId);
+
+    const { data, error } = await query;
+    if (error) throw error;
+
+    const mapped: DrawingAcknowledgement[] = (data || []).map((row: {
+      job_id: string;
+      drawing_id: string;
+      confirmed_at: string | null;
+      confirmed_by: string | null;
+      jobs?: { workshop_id: string } | null;
+    }) => ({
+      id: `ack-${row.job_id}-${row.drawing_id}`,
+      drawingId: row.drawing_id,
+      jobId: row.job_id,
+      workshopId: row.jobs?.workshop_id || '',
+      acknowledgedAt: row.confirmed_at ? row.confirmed_at.split('T')[0] : null,
+      acknowledgedBy: row.confirmed_by || null,
+    }));
+
+    return { data: mapped, error: null };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'Failed to fetch acknowledgements';
+    return { data: null, error: msg };
+  }
+}
+
+/**
+ * Create a new drawing revision in Supabase
+ */
+export async function createDrawingRevision(params: {
+  partId: string;
+  revision: string;
+  fileUrl: string;
+  changeNote?: string;
+}): Promise<FetchResult<Drawing>> {
+  if (isSampleMode()) {
+    const newDrawing = sampleAddDrawing({
+      partId: params.partId,
+      revision: params.revision,
+      fileUrl: params.fileUrl,
+      changeNote: params.changeNote,
+      uploadedBy: 'Current User',
+    });
+    return { data: newDrawing, error: null };
+  }
+
+  try {
+    const supabase = createBrowserSupabase();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    const { data, error } = await supabase
+      .from('drawings')
+      .insert({
+        part_id: params.partId,
+        revision: params.revision,
+        file_url: params.fileUrl,
+        change_note: params.changeNote || null,
+        is_approved: false,
+        uploaded_by: user?.id || null,
+      })
+      .select('*')
+      .single();
+
+    if (error) throw error;
+    return { data: mapDbDrawingToDrawing(data), error: null };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'Failed to create drawing revision';
+    return { data: null, error: msg };
+  }
+}
+
+/**
+ * Approve a drawing revision in Supabase:
+ * Enforces Rule 1 (revokes other approved revisions for part) and creates notification
+ */
+export async function approveDrawingRevision(params: {
+  drawingId: string;
+  partId: string;
+  approverName?: string;
+}): Promise<{ success: boolean; notifiedCount: number; error: string | null }> {
+  if (isSampleMode()) {
+    const result = sampleApproveDrawing(params.drawingId, params.approverName || 'Engineering');
+    return { success: result.success, notifiedCount: result.notifiedCount, error: result.error || null };
+  }
+
+  try {
+    const supabase = createBrowserSupabase();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    // 1. Revoke any currently approved drawings for this part to enforce Rule 1
+    const { error: revokeError } = await supabase
+      .from('drawings')
+      .update({ is_approved: false })
+      .eq('part_id', params.partId)
+      .eq('is_approved', true);
+
+    if (revokeError) throw revokeError;
+
+    // 2. Mark target drawing revision as approved
+    const { data: approvedRow, error: approveError } = await supabase
+      .from('drawings')
+      .update({
+        is_approved: true,
+        approved_by: user?.id || null,
+        approved_at: new Date().toISOString(),
+      })
+      .eq('id', params.drawingId)
+      .select('*, parts(name, part_code)')
+      .single();
+
+    if (approveError) throw approveError;
+
+    // 3. Find open jobs for this part to count affected workshops
+    const { data: openJobs } = await supabase
+      .from('jobs')
+      .select('id, workshop_id')
+      .eq('part_id', params.partId)
+      .not('stage', 'in', '("delivered","inspected","paid")');
+
+    const uniqueWorkshops = new Set((openJobs || []).map((j: { workshop_id: string }) => j.workshop_id));
+    const partName = approvedRow?.parts?.name || 'Part';
+    const partCode = approvedRow?.parts?.part_code || '';
+
+    // 4. Create notification row for the event
+    await supabase.from('notifications').insert({
+      type: 'info',
+      title: `Drawing Approved: ${partCode} ${approvedRow.revision}`,
+      body: `Revision ${approvedRow.revision} for ${partName} approved. Workshops must acknowledge before fabrication starts.`,
+      link: '/drawings',
+      read: false,
+    });
+
+    return { success: true, notifiedCount: uniqueWorkshops.size, error: null };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'Failed to approve drawing';
+    return { success: false, notifiedCount: 0, error: msg };
+  }
+}
+
+/**
+ * Send drawing reminder notification to unacknowledged workshops
+ */
+export async function sendDrawingAcknowledgementReminder(params: {
+  workshopName: string;
+  revision: string;
+  jobId?: string;
+}): Promise<{ success: boolean; error: string | null }> {
+  try {
+    const supabase = createBrowserSupabase();
+
+    await supabase.from('notifications').insert({
+      type: 'warning',
+      title: `Drawing awaiting acknowledgement: ${params.workshopName}`,
+      body: `Drawing revision ${params.revision} is awaiting acknowledgement from ${params.workshopName}. Work cannot proceed.`,
+      link: '/drawings',
+      read: false,
+    });
+
+    return { success: true, error: null };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'Failed to send reminder';
+    return { success: false, error: msg };
   }
 }
 
