@@ -77,10 +77,12 @@ for each row execute function audit_payment_change();
 -- RLS ON AUDIT_LOG: Admin & Management can read audit logs
 alter table audit_log enable row level security;
 
+drop policy if exists audit_log_read_admin on audit_log;
 create policy audit_log_read_admin on audit_log for select
 using (
   (select role from public.users where id = auth.uid()) in ('admin', 'management')
 );
 
+drop policy if exists audit_log_insert_system on audit_log;
 create policy audit_log_insert_system on audit_log for insert
 with check (true);

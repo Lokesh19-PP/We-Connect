@@ -14,6 +14,7 @@ on conflict (id) do update set
 -- 2. STORAGE POLICIES (storage.objects)
 -- DRAWINGS BUCKET
 -- Read: All authenticated users
+drop policy if exists "drawings_read_authenticated" on storage.objects;
 create policy "drawings_read_authenticated"
 on storage.objects for select
 using (
@@ -22,6 +23,7 @@ using (
 );
 
 -- Upload: Engineering and Admin
+drop policy if exists "drawings_upload_engineering" on storage.objects;
 create policy "drawings_upload_engineering"
 on storage.objects for insert
 with check (
@@ -33,6 +35,7 @@ with check (
 
 -- PHOTOS BUCKET
 -- Read: All authenticated users
+drop policy if exists "photos_read_authenticated" on storage.objects;
 create policy "photos_read_authenticated"
 on storage.objects for select
 using (
@@ -41,6 +44,7 @@ using (
 );
 
 -- Upload: Workshop Staff/Owner, Quality Inspector, Admin
+drop policy if exists "photos_upload_workshop_quality" on storage.objects;
 create policy "photos_upload_workshop_quality"
 on storage.objects for insert
 with check (
@@ -52,6 +56,7 @@ with check (
 
 -- INVOICES BUCKET
 -- Read: Finance, Management, Admin, or Workshop Owner
+drop policy if exists "invoices_read_authorized" on storage.objects;
 create policy "invoices_read_authorized"
 on storage.objects for select
 using (
@@ -62,6 +67,7 @@ using (
 );
 
 -- Upload: Workshop Owner, Workshop Staff, Admin
+drop policy if exists "invoices_upload_workshop" on storage.objects;
 create policy "invoices_upload_workshop"
 on storage.objects for insert
 with check (

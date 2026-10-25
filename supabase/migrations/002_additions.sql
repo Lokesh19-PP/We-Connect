@@ -11,10 +11,12 @@ create table if not exists projects (
   created_at timestamptz not null default now()
 );
 
--- Link projects foreign key
+-- Link projects foreign key (idempotent)
+alter table jobs drop constraint if exists fk_jobs_project;
 alter table jobs 
   add constraint fk_jobs_project foreign key (project_id) references projects(id) on delete set null;
 
+alter table assembly_steps drop constraint if exists fk_assembly_steps_project;
 alter table assembly_steps 
   add constraint fk_assembly_steps_project foreign key (project_id) references projects(id) on delete cascade;
 
@@ -123,43 +125,56 @@ $$;
 
 -- Projects: read by all authenticated; write by procurement and admin
 alter table projects enable row level security;
+drop policy if exists projects_read on projects;
 create policy projects_read on projects for select using (true);
+
+drop policy if exists projects_write on projects;
 create policy projects_write on projects for all using (current_user_role() in ('procurement', 'admin'));
 
 -- Notifications policies
+drop policy if exists notifications_select on notifications;
 create policy notifications_select on notifications for select
   using (user_id = auth.uid() or user_id is null);
 
+drop policy if exists notifications_update on notifications;
 create policy notifications_update on notifications for update
   using (user_id = auth.uid());
 
+drop policy if exists notifications_insert on notifications;
 create policy notifications_insert on notifications for insert
   with check (true);
 
 -- Quality: can insert and update inspections
+drop policy if exists inspections_insert_quality on inspections;
 create policy inspections_insert_quality on inspections for insert
   with check (current_user_role() in ('quality', 'admin'));
 
+drop policy if exists inspections_update_quality on inspections;
 create policy inspections_update_quality on inspections for update
   using (current_user_role() in ('quality', 'admin'));
 
 -- Finance: updates invoices_payments (approve & mark paid)
+drop policy if exists payments_update_finance on invoices_payments;
 create policy payments_update_finance on invoices_payments for update
   using (current_user_role() in ('finance', 'admin'));
 
 -- Engineering: inserts and approves drawings
+drop policy if exists drawings_insert_engineering on drawings;
 create policy drawings_insert_engineering on drawings for insert
   with check (current_user_role() in ('engineering', 'admin'));
 
+drop policy if exists drawings_update_engineering on drawings;
 create policy drawings_update_engineering on drawings for update
   using (current_user_role() in ('engineering', 'admin'));
 
 -- Stores: inserts deliveries
+drop policy if exists deliveries_insert_stores on deliveries;
 create policy deliveries_insert_stores on deliveries for insert
   with check (current_user_role() in ('stores', 'admin'));
 
 -- Workshop Staff & Owner:
 -- Inserts status_updates for its own workshop's jobs
+drop policy if exists status_insert_workshop on status_updates;
 create policy status_insert_workshop on status_updates for insert
   with check (
     job_id in (select id from jobs where workshop_id = current_workshop())
@@ -167,6 +182,7 @@ create policy status_insert_workshop on status_updates for insert
   );
 
 -- Inserts drawing acknowledgements for its own workshop's jobs
+drop policy if exists ack_insert_workshop on drawing_acknowledgements;
 create policy ack_insert_workshop on drawing_acknowledgements for insert
   with check (
     job_id in (select id from jobs where workshop_id = current_workshop())
@@ -174,6 +190,7 @@ create policy ack_insert_workshop on drawing_acknowledgements for insert
   );
 
 -- Workshop Staff/Owner updates job stage only for its own workshop's jobs
+drop policy if exists jobs_update_workshop on jobs;
 create policy jobs_update_workshop on jobs for update
   using (
     (is_workshop_user() and workshop_id = current_workshop())
@@ -181,6 +198,7 @@ create policy jobs_update_workshop on jobs for update
   );
 
 -- Workshop Owner: can insert or upload invoice on invoices_payments
+drop policy if exists payments_insert_workshop on invoices_payments;
 create policy payments_insert_workshop on invoices_payments for insert
   with check (
     job_id in (select id from jobs where workshop_id = current_workshop())
@@ -188,15 +206,19 @@ create policy payments_insert_workshop on invoices_payments for insert
   );
 
 -- Procurement: inserts jobs and manages vendors
+drop policy if exists jobs_insert_procurement on jobs;
 create policy jobs_insert_procurement on jobs for insert
   with check (current_user_role() in ('procurement', 'admin'));
 
+drop policy if exists workshops_write_procurement on workshops;
 create policy workshops_write_procurement on workshops for insert
   with check (current_user_role() in ('procurement', 'admin'));
 
+drop policy if exists workshops_update_procurement on workshops;
 create policy workshops_update_procurement on workshops for update
   using (current_user_role() in ('procurement', 'admin'));
 
 -- Admin: full access to users table
+drop policy if exists users_admin_all on users;
 create policy users_admin_all on users for all
   using (current_user_role() = 'admin' or id = auth.uid());
