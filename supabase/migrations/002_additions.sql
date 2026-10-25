@@ -222,3 +222,23 @@ create policy workshops_update_procurement on workshops for update
 drop policy if exists users_admin_all on users;
 create policy users_admin_all on users for all
   using (current_user_role() = 'admin' or id = auth.uid());
+
+-- 7. DRAWING ACKNOWLEDGEMENT NULLABILITY & TRIGGER FIX
+alter table drawing_acknowledgements alter column confirmed_by drop not null;
+alter table drawing_acknowledgements alter column confirmed_at drop not null;
+
+create or replace function enforce_ack_before_progress() returns trigger
+language plpgsql as $$
+begin
+  if new.stage = 'in_progress' and (tg_op = 'UPDATE' and old.stage is distinct from new.stage) then
+    if not exists (
+      select 1 from drawing_acknowledgements a
+      join drawings d on d.id = a.drawing_id
+      where a.job_id = new.id and d.part_id = new.part_id and d.is_approved and a.confirmed_at is not null
+    ) then
+      raise exception 'Workshop must acknowledge the approved drawing revision before work starts';
+    end if;
+  end if;
+  return new;
+end $$;
+

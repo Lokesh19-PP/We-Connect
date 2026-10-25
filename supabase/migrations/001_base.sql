@@ -69,8 +69,8 @@ create table jobs (
 create table drawing_acknowledgements (
   job_id uuid not null references jobs(id) on delete cascade,
   drawing_id uuid not null references drawings(id),
-  confirmed_by uuid not null references users(id),
-  confirmed_at timestamptz not null default now(),
+  confirmed_by uuid references users(id),
+  confirmed_at timestamptz default now(),
   primary key (job_id, drawing_id)
 );
 
@@ -150,11 +150,11 @@ $$;
 create or replace function enforce_ack_before_progress() returns trigger
 language plpgsql as $$
 begin
-  if new.stage = 'in_progress' and (tg_op = 'INSERT' or old.stage is distinct from new.stage) then
+  if new.stage = 'in_progress' and (tg_op = 'UPDATE' and old.stage is distinct from new.stage) then
     if not exists (
       select 1 from drawing_acknowledgements a
       join drawings d on d.id = a.drawing_id
-      where a.job_id = new.id and d.part_id = new.part_id and d.is_approved
+      where a.job_id = new.id and d.part_id = new.part_id and d.is_approved and a.confirmed_at is not null
     ) then
       raise exception 'Workshop must acknowledge the approved drawing revision before work starts';
     end if;

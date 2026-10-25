@@ -1,6 +1,37 @@
 -- supabase/seed.sql
 -- Seed data matching data/sample.ts for VendorFlow Phase B
 
+-- 0. RELAX DRAWING ACKNOWLEDGEMENT NULLABILITY FOR SEEDING
+alter table drawing_acknowledgements alter column confirmed_by drop not null;
+alter table drawing_acknowledgements alter column confirmed_at drop not null;
+
+-- Update trigger function to enforce acknowledgement on UPDATE to in_progress
+create or replace function enforce_ack_before_progress() returns trigger
+language plpgsql as $$
+begin
+  if new.stage = 'in_progress' and (tg_op = 'UPDATE' and old.stage is distinct from new.stage) then
+    if not exists (
+      select 1 from drawing_acknowledgements a
+      join drawings d on d.id = a.drawing_id
+      where a.job_id = new.id and d.part_id = new.part_id and d.is_approved and a.confirmed_at is not null
+    ) then
+      raise exception 'Workshop must acknowledge the approved drawing revision before work starts';
+    end if;
+  end if;
+  return new;
+end $$;
+
+-- Temporarily disable triggers during bulk seed load
+do $$
+begin
+  if exists (select 1 from pg_trigger where tgname = 'jobs_require_ack') then
+    alter table jobs disable trigger jobs_require_ack;
+  end if;
+  if exists (select 1 from pg_trigger where tgname = 'trg_audit_job_stage') then
+    alter table jobs disable trigger trg_audit_job_stage;
+  end if;
+end $$;
+
 -- 1. PROJECTS
 insert into projects (id, name, start_date, end_date, status)
 values
@@ -55,7 +86,7 @@ values
   ('e0000000-0000-0000-0000-000000000012', 'd0000000-0000-0000-0000-000000000006', 'Rev C', true, '/drawings/G-045_RevC.pdf', '2026-09-22'),
   ('e0000000-0000-0000-0000-000000000013', 'd0000000-0000-0000-0000-000000000007', 'Rev A', true, '/drawings/R-018_RevA.pdf', '2026-09-14'),
   ('e0000000-0000-0000-0000-000000000014', 'd0000000-0000-0000-0000-000000000008', 'Rev A', false, '/drawings/CL-003_RevA.pdf', '2026-09-03'),
-  ('e0000000-0000-0000-0000-000000000008', 'd0000000-0000-0000-0000-000000000008', 'Rev B', true, '/drawings/CL-003_RevB.pdf', '2026-09-19'),
+  ('e0000000-0000-0000-0000-000000000015', 'd0000000-0000-0000-0000-000000000008', 'Rev B', true, '/drawings/CL-003_RevB.pdf', '2026-09-19'),
   ('e0000000-0000-0000-0000-000000000016', 'd0000000-0000-0000-0000-000000000009', 'Rev A', true, '/drawings/B-205_RevA.pdf', '2026-09-16'),
   ('e0000000-0000-0000-0000-000000000017', 'd0000000-0000-0000-0000-000000000010', 'Rev A', false, '/drawings/F-111_RevA.pdf', '2026-09-25'),
   ('e0000000-0000-0000-0000-000000000018', 'd0000000-0000-0000-0000-000000000011', 'Rev A', true, '/drawings/FL-022_RevA.pdf', '2026-09-11'),
@@ -78,7 +109,7 @@ insert into jobs (id, part_id, workshop_id, project_id, quantity_ordered, quanti
 values
   -- Shree Fabricators (ws-1)
   ('f0000000-0000-0000-0000-000000000001', 'd0000000-0000-0000-0000-000000000001', 'c0000000-0000-0000-0000-000000000001', 'boiler-12', 20, 0, '2026-10-12', '2026-10-15', 'in_progress', 'at_risk', 'Priority job for Boiler #12', '2026-09-15'),
-  ('f0000000-0000-0000-0000-000000000004', 'd0000000-0000-0000-0000-000000000004', 'c0000000-0000-0000-0000-000000000001', 'boiler-b200', 50, 0, '2026-10-18', '2026-10-21', 'in_progress', 'on_track', '', '2026-09-20'),
+  ('f0000000-0000-0000-0000-000000000004', 'd0000000-0000-0000-0000-000000000001', 'c0000000-0000-0000-0000-000000000001', 'boiler-b200', 50, 0, '2026-10-18', '2026-10-21', 'in_progress', 'on_track', '', '2026-09-20'),
   ('f0000000-0000-0000-0000-000000000013', 'd0000000-0000-0000-0000-000000000009', 'c0000000-0000-0000-0000-000000000001', 'boiler-b200', 15, 0, '2026-10-20', '2026-10-23', 'accepted', 'on_track', '', '2026-09-28'),
   ('f0000000-0000-0000-0000-000000000014', 'd0000000-0000-0000-0000-000000000001', 'c0000000-0000-0000-0000-000000000001', 'boiler-12', 30, 0, '2026-10-22', '2026-10-25', 'ordered', 'on_track', 'Second batch', '2026-10-01'),
   ('f0000000-0000-0000-0000-000000000019', 'd0000000-0000-0000-0000-000000000005', 'c0000000-0000-0000-0000-000000000001', 'boiler-b200', 10, 10, '2026-10-10', '2026-10-13', 'ready', 'on_track', '', '2026-09-25'),
@@ -114,7 +145,39 @@ values
   ('f0000000-0000-0000-0000-000000000018', 'd0000000-0000-0000-0000-000000000010', 'c0000000-0000-0000-0000-000000000006', 'boiler-b300', 5, 0, '2026-10-15', '2026-10-18', 'ordered', 'may_miss_date', 'Drawing not approved yet', '2026-09-28')
 on conflict (id) do nothing;
 
--- 7. DELIVERIES
+-- 7. DRAWING ACKNOWLEDGEMENTS (22 acknowledged + 3 awaiting)
+insert into drawing_acknowledgements (job_id, drawing_id, confirmed_at)
+values
+  -- Acknowledged jobs
+  ('f0000000-0000-0000-0000-000000000001', 'e0000000-0000-0000-0000-000000000003', '2026-09-22'),
+  ('f0000000-0000-0000-0000-000000000002', 'e0000000-0000-0000-0000-000000000005', '2026-09-17'),
+  ('f0000000-0000-0000-0000-000000000003', 'e0000000-0000-0000-0000-000000000006', '2026-09-10'),
+  ('f0000000-0000-0000-0000-000000000004', 'e0000000-0000-0000-0000-000000000008', '2026-09-20'),
+  ('f0000000-0000-0000-0000-000000000005', 'e0000000-0000-0000-0000-000000000009', '2026-09-14'),
+  ('f0000000-0000-0000-0000-000000000006', 'e0000000-0000-0000-0000-000000000012', '2026-09-24'),
+  ('f0000000-0000-0000-0000-000000000007', 'e0000000-0000-0000-0000-000000000013', '2026-09-16'),
+  ('f0000000-0000-0000-0000-000000000008', 'e0000000-0000-0000-0000-000000000015', '2026-09-21'),
+  ('f0000000-0000-0000-0000-000000000009', 'e0000000-0000-0000-0000-000000000016', '2026-09-18'),
+  ('f0000000-0000-0000-0000-000000000010', 'e0000000-0000-0000-0000-000000000005', '2026-09-21'),
+  ('f0000000-0000-0000-0000-000000000013', 'e0000000-0000-0000-0000-000000000016', '2026-09-29'),
+  ('f0000000-0000-0000-0000-000000000015', 'e0000000-0000-0000-0000-000000000013', '2026-09-23'),
+  ('f0000000-0000-0000-0000-000000000016', 'e0000000-0000-0000-0000-000000000015', '2026-09-25'),
+  ('f0000000-0000-0000-0000-000000000017', 'e0000000-0000-0000-0000-000000000008', '2026-09-27'),
+  ('f0000000-0000-0000-0000-000000000019', 'e0000000-0000-0000-0000-000000000009', '2026-09-26'),
+  ('f0000000-0000-0000-0000-000000000020', 'e0000000-0000-0000-0000-000000000020', '2026-10-01'),
+  ('f0000000-0000-0000-0000-000000000021', 'e0000000-0000-0000-0000-000000000003', '2026-10-02'),
+  ('f0000000-0000-0000-0000-000000000022', 'e0000000-0000-0000-0000-000000000006', '2026-10-03'),
+  ('f0000000-0000-0000-0000-000000000023', 'e0000000-0000-0000-0000-000000000009', '2026-10-04'),
+  ('f0000000-0000-0000-0000-000000000024', 'e0000000-0000-0000-0000-000000000018', '2026-10-03'),
+  ('f0000000-0000-0000-0000-000000000025', 'e0000000-0000-0000-0000-000000000012', '2026-10-04'),
+
+  -- 3 Awaiting Drawing Acknowledgements (confirmed_at is NULL)
+  ('f0000000-0000-0000-0000-000000000011', 'e0000000-0000-0000-0000-000000000018', null),
+  ('f0000000-0000-0000-0000-000000000012', 'e0000000-0000-0000-0000-000000000020', null),
+  ('f0000000-0000-0000-0000-000000000014', 'e0000000-0000-0000-0000-000000000003', null)
+on conflict (job_id, drawing_id) do update set confirmed_at = excluded.confirmed_at;
+
+-- 8. DELIVERIES
 insert into deliveries (id, job_id, quantity, delivered_at, challan_url, challan_number, received_by, notes)
 values
   ('b0000000-0000-0000-0000-000000000001', 'f0000000-0000-0000-0000-000000000002', 12, '2026-10-06', null, 'CH-2026-0234', 'Rajendra More', 'All frames in good condition'),
@@ -125,7 +188,7 @@ values
   ('b0000000-0000-0000-0000-000000000006', 'f0000000-0000-0000-0000-000000000019', 10, '2026-10-07', null, 'CH-2026-0260', 'Sanjay Kale', 'Support plates delivered')
 on conflict (id) do nothing;
 
--- 8. INSPECTIONS
+-- 9. INSPECTIONS
 insert into inspections (id, job_id, result, remarks, reinspection_date, inspected_at)
 values
   ('80000000-0000-0000-0000-000000000001', 'f0000000-0000-0000-0000-000000000007', 'accepted', 'All dimensions within tolerance', null, '2026-10-03'),
@@ -135,7 +198,7 @@ values
   ('80000000-0000-0000-0000-000000000005', 'f0000000-0000-0000-0000-000000000002', 'pending', 'Awaiting QC review', null, '2026-10-07')
 on conflict (id) do nothing;
 
--- 9. INVOICES & PAYMENTS
+-- 10. INVOICES & PAYMENTS
 insert into invoices_payments (id, job_id, invoice_number, invoice_date, invoice_amount, invoice_url, payment_status, paid_at, paid_amount)
 values
   ('90000000-0000-0000-0000-000000000001', 'f0000000-0000-0000-0000-000000000007', 'INV-DM-2026-034', '2026-10-04', 185000, '/invoices/INV-DM-2026-034.pdf', 'paid', '2026-10-06', 185000),
@@ -148,7 +211,7 @@ values
   ('90000000-0000-0000-0000-000000000008', 'f0000000-0000-0000-0000-000000000004', 'INV-SF-2026-056', '2026-10-07', 55000, '/invoices/INV-SF-2026-056.pdf', 'awaiting_approval', null, null)
 on conflict (id) do nothing;
 
--- 10. NOTIFICATIONS
+-- 11. NOTIFICATIONS
 insert into notifications (id, type, title, body, link, read, created_at)
 values
   ('70000000-0000-0000-0000-000000000001', 'error', 'Overdue: Stand S-031', 'Job at Patil Steel is past due date (05 Oct)', '/jobs', false, '2026-10-06'),
@@ -157,3 +220,14 @@ values
   ('70000000-0000-0000-0000-000000000004', 'success', 'Payment ready', 'Clamp CL-003 from Jadhav & Sons – invoice ready for approval', '/payments', true, '2026-10-07'),
   ('70000000-0000-0000-0000-000000000005', 'warning', 'No update from Patil Steel', 'Workshop has not posted an update in 2 days', '/vendors', false, '2026-10-07')
 on conflict (id) do nothing;
+
+-- 12. RE-ENABLE TRIGGERS
+do $$
+begin
+  if exists (select 1 from pg_trigger where tgname = 'jobs_require_ack') then
+    alter table jobs enable trigger jobs_require_ack;
+  end if;
+  if exists (select 1 from pg_trigger where tgname = 'trg_audit_job_stage') then
+    alter table jobs enable trigger trg_audit_job_stage;
+  end if;
+end $$;
