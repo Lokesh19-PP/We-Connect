@@ -2,16 +2,24 @@
 
 // ──────────────────────────────────────────────
 // VendorFlow – Notification Bell & Dropdown Component
-// Exported for header inclusion (§8 & Prompt 4)
+// Live Supabase integration with Realtime channel,
+// unread count, and mark-as-read persistence
 // ──────────────────────────────────────────────
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useRole } from '@/lib/role-context';
 import {
-  getNotificationsForRoleState,
-  getUnreadCountForRole,
+  fetchNotifications,
   markNotificationAsRead,
   markAllNotificationsAsRead,
+  isSampleMode,
+} from '@/lib/data';
+import { createClient as createBrowserSupabase } from '@/lib/supabase/client';
+import { mapDbNotificationToNotification, type DbNotificationRow } from '@/lib/data/mappers';
+import {
+  getNotificationsForRoleState,
+  markNotificationAsRead as sampleMarkRead,
+  markAllNotificationsAsRead as sampleMarkAllRead,
 } from '@/data/notifications';
 import {
   Bell,
@@ -22,7 +30,7 @@ import {
   XCircle,
   Clock,
   ChevronRight,
-  Filter,
+  Loader2,
 } from 'lucide-react';
 import type { AppNotification } from '@/types';
 
@@ -30,10 +38,74 @@ export function NotificationBell() {
   const { role } = useRole();
   const [isOpen, setIsOpen] = useState(false);
   const [filterTab, setFilterTab] = useState<'all' | 'unread' | 'action'>('all');
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
+  const [loading, setLoading] = useState(true);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const notifications = getNotificationsForRoleState(role);
-  const unreadCount = getUnreadCountForRole(role);
+  // Initial load and Realtime subscription
+  useEffect(() => {
+    let isMounted = true;
+
+    async function fetchAsync() {
+      if (isSampleMode()) {
+        const sampleData = getNotificationsForRoleState(role);
+        if (isMounted) {
+          setNotifications(sampleData);
+          setLoading(false);
+        }
+        return;
+      }
+
+      const { data, error } = await fetchNotifications();
+      if (!isMounted) return;
+      if (!error && data) {
+        setNotifications(data);
+      } else {
+        setNotifications(getNotificationsForRoleState(role));
+      }
+      setLoading(false);
+    }
+
+    Promise.resolve().then(fetchAsync);
+
+    if (isSampleMode()) return;
+
+    // Supabase Realtime updates on 'notifications' table
+    const supabase = createBrowserSupabase();
+    const channel = supabase
+      .channel('notifications_realtime_channel')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'notifications' },
+        (payload) => {
+          if (!isMounted) return;
+          if (payload.eventType === 'INSERT') {
+            const newNotif = mapDbNotificationToNotification(payload.new as DbNotificationRow);
+            setNotifications((prev) => [newNotif, ...prev.filter((n) => n.id !== newNotif.id)]);
+          } else if (payload.eventType === 'UPDATE') {
+            const updated = mapDbNotificationToNotification(payload.new as DbNotificationRow);
+            setNotifications((prev) =>
+              prev.map((n) => (n.id === updated.id ? updated : n))
+            );
+          } else if (payload.eventType === 'DELETE') {
+            const deletedId = (payload.old as { id: string }).id;
+            setNotifications((prev) => prev.filter((n) => n.id !== deletedId));
+          }
+        }
+      )
+      .subscribe();
+
+    // Fallback polling every 30 seconds
+    const interval = setInterval(() => {
+      if (isMounted) fetchAsync();
+    }, 30000);
+
+    return () => {
+      isMounted = false;
+      supabase.removeChannel(channel);
+      clearInterval(interval);
+    };
+  }, [role]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -46,14 +118,33 @@ export function NotificationBell() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleMarkRead = (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    markNotificationAsRead(id);
+  const handleMarkRead = async (id: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+
+    // Optimistic update
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, read: true } : n))
+    );
+
+    if (isSampleMode()) {
+      sampleMarkRead(id);
+    } else {
+      await markNotificationAsRead(id);
+    }
   };
 
-  const handleMarkAllRead = () => {
-    markAllNotificationsAsRead(role);
+  const handleMarkAllRead = async () => {
+    // Optimistic update
+    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+
+    if (isSampleMode()) {
+      sampleMarkAllRead(role);
+    } else {
+      await markAllNotificationsAsRead();
+    }
   };
+
+  const unreadCount = notifications.filter((n) => !n.read).length;
 
   const filteredNotifications = notifications.filter((n) => {
     if (filterTab === 'unread') return !n.read;
@@ -73,7 +164,7 @@ export function NotificationBell() {
         <Bell className="w-5 h-5" />
         {unreadCount > 0 && (
           <span className="absolute top-1 right-1 flex items-center justify-center min-w-[16px] h-4 px-1 bg-red-600 text-white font-extrabold text-[10px] rounded-full ring-2 ring-white animate-pulse">
-            {unreadCount}
+            {unreadCount > 99 ? '99+' : unreadCount}
           </span>
         )}
       </button>
@@ -87,7 +178,7 @@ export function NotificationBell() {
               <Bell className="w-4 h-4 text-blue-400" />
               <span className="font-bold text-xs">Notifications</span>
               {unreadCount > 0 && (
-                <span className="px-1.5 py-0.2 bg-red-500 text-white text-[10px] font-bold rounded-full">
+                <span className="px-1.5 py-0.5 bg-red-500 text-white text-[10px] font-bold rounded-full">
                   {unreadCount} new
                 </span>
               )}
@@ -146,7 +237,12 @@ export function NotificationBell() {
 
           {/* Notifications List */}
           <div className="max-h-80 overflow-y-auto divide-y divide-slate-100">
-            {filteredNotifications.length === 0 ? (
+            {loading ? (
+              <div className="p-8 flex items-center justify-center space-x-2 text-slate-400 text-xs">
+                <Loader2 className="w-4 h-4 animate-spin text-[#F97316]" />
+                <span>Loading notifications...</span>
+              </div>
+            ) : filteredNotifications.length === 0 ? (
               <div className="p-8 text-center text-xs text-slate-400">
                 No notifications matching your filter.
               </div>
@@ -154,8 +250,11 @@ export function NotificationBell() {
               filteredNotifications.map((n) => (
                 <div
                   key={n.id}
-                  onClick={() => setIsOpen(false)}
-                  className={`p-3.5 hover:bg-slate-50/80 transition-colors flex items-start justify-between space-x-3 text-xs ${
+                  onClick={() => {
+                    handleMarkRead(n.id);
+                    setIsOpen(false);
+                  }}
+                  className={`p-3.5 hover:bg-slate-50/80 transition-colors flex items-start justify-between space-x-3 text-xs cursor-pointer ${
                     !n.read ? 'bg-blue-50/30' : ''
                   }`}
                 >
@@ -198,6 +297,11 @@ export function NotificationBell() {
                         {n.link && (
                           <Link
                             href={n.link}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleMarkRead(n.id);
+                              setIsOpen(false);
+                            }}
                             className="text-[11px] text-blue-600 hover:text-blue-800 font-bold flex items-center space-x-0.5"
                           >
                             <span>View</span>
@@ -224,9 +328,13 @@ export function NotificationBell() {
           </div>
 
           {/* Footer */}
-          <div className="p-2.5 bg-slate-50 border-t border-slate-100 text-center text-[11px]">
+          <div className="p-2.5 bg-slate-50 border-t border-slate-100 flex items-center justify-between text-[11px] px-3.5">
             <span className="text-slate-500 font-medium">
-              Filtered for <span className="font-bold text-slate-700">{role}</span> role
+              Role: <span className="font-bold text-slate-700">{role}</span>
+            </span>
+            <span className="text-[10px] text-emerald-600 flex items-center space-x-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span>Realtime active</span>
             </span>
           </div>
         </div>

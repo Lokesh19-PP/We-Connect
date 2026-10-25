@@ -487,6 +487,44 @@ export async function fetchNotifications(): Promise<FetchResult<AppNotification[
   }
 }
 
+/**
+ * Mark a single notification as read in Supabase
+ */
+export async function markNotificationAsRead(id: string): Promise<{ success: boolean; error: string | null }> {
+  try {
+    const supabase = createBrowserSupabase();
+    const { error } = await supabase
+      .from('notifications')
+      .update({ read: true })
+      .eq('id', id);
+
+    if (error) throw error;
+    return { success: true, error: null };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'Failed to mark notification as read';
+    return { success: false, error: msg };
+  }
+}
+
+/**
+ * Mark all unread notifications as read in Supabase
+ */
+export async function markAllNotificationsAsRead(): Promise<{ success: boolean; error: string | null }> {
+  try {
+    const supabase = createBrowserSupabase();
+    const { error } = await supabase
+      .from('notifications')
+      .update({ read: true })
+      .eq('read', false);
+
+    if (error) throw error;
+    return { success: true, error: null };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'Failed to mark all notifications as read';
+    return { success: false, error: msg };
+  }
+}
+
 // ──────────────────────────────────────────────
 // Re-export Synchronous Getters (Zero Breaking Changes for Screens)
 // ──────────────────────────────────────────────

@@ -179,12 +179,23 @@ export function mapDbPaymentToPayment(row: any): InvoicePayment {
   };
 }
 
-export function mapDbNotificationToNotification(row: any): AppNotification {
+export interface DbNotificationRow {
+  id: string;
+  title: string;
+  body?: string | null;
+  message?: string | null;
+  type?: 'info' | 'warning' | 'error' | 'success' | string | null;
+  link?: string | null;
+  read?: boolean | null;
+  created_at?: string | null;
+}
+
+export function mapDbNotificationToNotification(row: DbNotificationRow): AppNotification {
   return {
     id: row.id,
     title: row.title,
     message: row.body || row.message || '',
-    type: row.type || 'info',
+    type: (row.type as 'info' | 'warning' | 'error' | 'success') || 'info',
     link: row.link || null,
     read: !!row.read,
     createdAt: row.created_at ? row.created_at.split('T')[0] : '',
