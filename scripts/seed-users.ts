@@ -32,9 +32,13 @@ if (!supabaseUrl || !serviceRoleKey || supabaseUrl.includes('<') || serviceRoleK
   process.exit(1);
 }
 
-const supabase = createClient(supabaseUrl, serviceRoleKey, {
+// Clean and normalize supabaseUrl
+const cleanUrl = supabaseUrl.replace(/\/rest\/v1\/?$/, '').replace(/\/$/, '');
+
+const supabase = createClient(cleanUrl, serviceRoleKey, {
   auth: { autoRefreshToken: false, persistSession: false },
 });
+
 
 
 interface UserSeedSpec {

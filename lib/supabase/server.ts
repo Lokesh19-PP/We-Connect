@@ -8,6 +8,7 @@ function getSanitizedEnv() {
   let serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'placeholder-service-role-key';
 
   try {
+    supabaseUrl = supabaseUrl.replace(/\/rest\/v1\/?$/, '').replace(/\/$/, '');
     const parsed = new URL(supabaseUrl);
     if (!parsed.protocol.startsWith('http') || supabaseUrl.includes('<')) {
       supabaseUrl = 'https://placeholder.supabase.co';
